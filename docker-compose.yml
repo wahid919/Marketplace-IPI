@@ -1,0 +1,81 @@
+version: '3'
+services:
+    app:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile
+        image: php:alpine
+        container_name: app
+        restart: unless-stopped
+        tty: true
+        environment:
+            SERVICE_NAME: app
+            SERVICE_TAGS: dev
+        working_dir: /var/www/html
+        depends_on:
+            - mydb
+        volumes:
+            - ./:/var/www/html/
+            - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+        networks:
+            - isalam_net
+
+    web_server:
+        image: nginx:alpine
+        container_name: webserver
+        restart: unless-stopped
+        working_dir: /var/www/html
+        tty: true
+        volumes:
+            - ./:/var/www/html
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+        depends_on:
+            - app
+        ports:
+            - "31337:80"
+        networks:
+            - isalam_net
+
+    adminer:
+        image: adminer:latest
+        container_name: adminer
+        restart: always
+        depends_on:
+            - mydb
+            - app
+            - web_server
+        ports:
+            - "7777:8080"
+        networks:
+            - isalam_net
+
+    mydb:
+        image: mariadb:10
+        container_name: mydb
+        restart: always
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: defrindr
+            MYSQL_DATABASE: db_isalam
+            MYSQL_USER: root
+            MYSQL_PASSWORD: defrindr
+        volumes:
+            - isalamdb:/var/lib/mysql
+            - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+        networks:
+            - isalam_net
+        healthcheck:
+            test: [ "CMD", "mysqladmin", "ping", "-pdefrindr" ]
+            retries: 3
+            timeout: 5s
+
+#Docker Networks
+networks:
+    isalam_net:
+        driver: bridge
+
+#Volumes
+volumes:
+    isalamdb:
+        driver: local
