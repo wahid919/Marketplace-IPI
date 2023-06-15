@@ -32,6 +32,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
     <thead>
         <tr>
             <th>variasi</th>
+            <!-- <th></th> -->
             <th class="text-center">
                 <button type="button" class="add-room btn btn-success btn-xs"><span class="fa fa-plus"></span></button>
             </th>
@@ -40,13 +41,14 @@ use wbraganca\dynamicform\DynamicFormWidget;
     <tbody class="container-rooms">
         <?php foreach ($modelsProductVariant as $indexProductVariant => $modelProductVariant) : ?>
             <tr class="room-item">
+                <?php
+                if (!$modelProductVariant->isNewRecord) {
+                    echo Html::activeHiddenInput($modelProductVariant, "[{$indexProductDetail}][{$indexProductVariant}]id");
+                }
+                ?>
                 <td class="vcenter">
-                    <?php
-                    // necessary for update action.
-                    if (!$modelProductVariant->isNewRecord) {
-                        echo Html::activeHiddenInput($modelProductVariant, "[{$indexProductDetail}][{$indexProductVariant}]id");
-                    }
-                    ?>
+                    <!-- // necessary for update action. -->
+                    <!-- <span>Color</span> -->
                     <?= $form->field($modelProductVariant, "[{$indexProductDetail}][{$indexProductVariant}]type")->label(false)->textInput(['maxlength' => true]) ?>
                     <?= $form->field($modelProductVariant, "[{$indexProductDetail}][{$indexProductVariant}]value")->label(false)->textInput(['maxlength' => true]) ?>
                 </td>

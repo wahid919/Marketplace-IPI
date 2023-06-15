@@ -5,6 +5,8 @@
 namespace app\controllers\base;
 
 use app\models\Keranjang;
+use Yii;
+
 use app\models\search\KeranjangSearch;
 use yii\web\Controller;
 use yii\web\HttpException;
@@ -36,10 +38,12 @@ class KeranjangController extends Controller
      * Lists all Keranjang models.
      * @return mixed
      */
-    public function actionIndex()
+    public function actionIndex($tab = 'belum-bayar')
     {
         $searchModel  = new KeranjangSearch;
-        $dataProvider = $searchModel->search($_GET);
+        $dataProvider = $searchModel->searchAdmin(Yii::$app->request->queryParams, $tab);
+
+        $searchModel->status_id = $tab;
 
         Tabs::clearLocalStorage();
 
@@ -102,6 +106,11 @@ class KeranjangController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load($_POST) && $model->save()) {
+            if (!empty($model->resi) && $model->status_id == 2) {
+                // Keranjang::updateAll(['status_id' => 10]);
+                $model->status_id = 10;
+                $model->save();
+            }
             return $this->redirect(Url::previous());
         } else {
             return $this->render('update', [

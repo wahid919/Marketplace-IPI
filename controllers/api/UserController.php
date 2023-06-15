@@ -7,6 +7,14 @@ namespace app\controllers\api;
  */
 
 use app\components\UploadFile;
+use app\traits\UploadFileTrait;
+
+use app\traits\MessageTrait;
+
+use app\models\LoginForm;
+
+use yii\web\Response;
+
 use yii\base\Security;
 use app\models\User;
 use app\models\Otp;
@@ -16,34 +24,67 @@ use Yii;
 use yii\web\UploadedFile;
 use app\components\Constant;
 use app\components\SSOToken;
+use yii\helpers\Console;
 use yii\web\HttpException;
+
 
 class UserController extends \yii\rest\ActiveController
 {
 
     use UploadFile;
     public $modelClass = 'app\models\User';
+    // public function behaviors()
+    // {
+    //     $parent = parent::behaviors();
+    //     $parent['authentication'] = [
+    //         "class" => "\app\components\CustomAuth",
+    //         "only" => ["user-view", "update-profile"],
+    //         // 'except' => ['load-user', 'login', 'register', 'kirim-otp', 'reset-password', 'register-sosmed'],
+    //     ];
+
+    //     return $parent;
+    // }
+
     public function behaviors()
     {
-        $parent = parent::behaviors();
-        $parent['authentication'] = [
-            "class" => "\app\components\CustomAuth",
-            "only" => ["user-view", "update-profile"],
-        ];
+        $behaviors = parent::behaviors();
 
-        return $parent;
-    }
-    protected function verbs()
-    {
-        return [
-            'user-view' => ['GET'],
-            'login' => ['POST'],
-            'register' => ['POST'],
-            'check-otp' => ['POST'],
-            'refresh-otp' => ['POST'],
-            'lupa-password' => ['POST'],
-            'update-profile' => ['POST'],
-        ];
+        return array_merge([
+            'corsFilter'  => [
+                'class' => \yii\filters\Cors::className(),
+                'cors'  => [
+                    'Origin'                           => ['http://localhost:8080',],
+                    'Access-Control-Request-Method'    => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+                    'Access-Control-Allow-Credentials' => true,
+                    'Access-Control-Max-Age'           => 3600,                 // Cache (seconds)
+                    'Access-Control-Allow-Origin'      => ['*'],
+                    'Access-Control-Request-Headers' => ['*'],
+                    'Access-Control-Expose-Headers' => [],
+                ],
+            ],
+            'contentNegotiator' => [
+                'class' => yii\filters\ContentNegotiator::className(),
+                'formats' => [
+                    'application/json' => Response::FORMAT_JSON,
+                    'application/xml' => Response::FORMAT_XML,
+                ],
+            ],
+            'verbFilter' => [
+                'class' => \yii\filters\VerbFilter::className(),
+                'actions' => $this->verbs(),
+            ],
+            'rateLimiter' => [
+                'class' => \yii\filters\RateLimiter::className(),
+            ],
+            'authentication' => [
+                'class' => \app\components\CustomAuth::class,
+                'except' => ['login', 'register', 'forgot-password'],
+                // 'header' => 'Authorization',
+                // 'pattern' => '/Bearer {secret_token}/',
+            ]
+        ], $behaviors);
+
+        return $behaviors;
     }
     public function actions()
     {
@@ -56,13 +97,249 @@ class UserController extends \yii\rest\ActiveController
         return $actions;
     }
 
+    function verbs()
+    {
+        return [
+            'secret-method-to-check-your-token-is-valid-or-not' => ['GET', 'HEAD'],
+            'this-is-really-really-secret-method-to-get-data-for-registration-another-module' => ['GET', 'HEAD'],
+            'load-user' => ['GET', 'HEAD'],
+            'view' => ['GET', 'HEAD'],
+            'register' => ['POST'],
+            'login' => ['POST'],
+            'update' => ['PUT', 'PATCH'],
+            'forgot-password' => ['POST'],
+        ];
+    }
+
+    public function actionSecretMethodToCheckYourTokenIsValidOrNot()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $response = SSOToken::checkToken();
+        return $response;
+    }
+
+    public function actionThisIsReallyReallySecretMethodToGetDataForRegistrationAnotherModule()
+    {
+        $user = \app\models\User::findOne(["id" => Yii::$app->user->id]);
+        if ($user == null) {
+            throw new HttpException(404);
+        }
+
+        $fields = $_POST['fields'];
+
+        $data = [];
+        if (is_array($fields)) :
+            foreach ($fields as $field) :
+                if ($user->hasAttribute($field)) :
+                    $data[$field] = $user->$field;
+                endif;
+
+            endforeach;
+        else :
+            if ($user->hasAttribute($fields)) :
+                $data[$fields] = $user->$fields;
+            endif;
+        endif;
+
+        return [
+            "success" => true,
+            "message" => $this->messageFetchSuccess(),
+            "data" => $data,
+        ];
+    }
+
+    // public function actionLoadUser()
+    // {
+    //     $user = Yii::$app->user->identity;
+    //     if ($user) {
+    //         return $user;
+    //     } else {
+    //         throw new \yii\web\HttpException(401, 'Unauthorized');
+    //     }
+    // }
+    public function actionProfile()
+    {
+        $user = Yii::$app->user->identity;
+
+        if ($user) {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return $user;
+        } else {
+            throw new \yii\web\NotFoundHttpException('User not found.');
+        }
+    }
+    public function actionLoadUser()
+    {
+        $headers = Yii::$app->request->headers;
+        $accessToken = $headers->get('Authorization');
+        $accessToken = str_replace('Bearer ', '', $accessToken);
+
+        $user = User::findOne(['secret_token' => $accessToken]);
+        if ($user) {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return [
+                'success' => true,
+                'user' => $user,
+            ];
+        }
+
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        return [
+            'success' => false,
+            'message' => 'User not found',
+        ];
+    }
+
+    // public function actionLogin()
+    // {
+    //     Yii::$app->response->format = Response::FORMAT_JSON;
+
+    //     $params = Yii::$app->request->post();
+    //     if (strtolower(Yii::$app->request->method) != "post") {
+    //         throw new HttpException(405);
+    //     }
+    //     try {
+    //         $user = \app\models\User::findByUsername($params['username']);
+    //         // $valid = \app\models\User::validateUser('username', 'password');  
+    //         // var_dump($user);die;
+
+    //         if (isset($user)) :
+    //             if (\Yii::$app->security->validatePassword($params['password'], $user->password) == false)
+    //                 throw new HttpException(400, Yii::t("action_message", "Password Salah"));
+    //             // $user->scenario = $user::SCENARIO_UPDATE;
+    //             $generate_random_string = SSOToken::generateToken();
+    //             $user->secret_token = $generate_random_string;
+    //             // $user->fcm_token = $params['fcm_token'];
+    //             $user->validate();
+    //             $user->save();
+    //             // var_dump($user);die;
+
+    //             $token = $generate_random_string;
+
+    //             return (object) [
+    //                 "success" => true,
+    //                 "message" => Yii::t("action_message", "Login Berhasil"),
+    //                 "token" => $token,
+    //             ];
+    //         endif;
+    //     } catch (\Exception $e) {
+    //         throw new HttpException(500, $e->getMessage());
+    //     }
+
+    //     throw new HttpException(400, Yii::t("action_message", "Login gagal"));
+    // }
+
+    // public function actionLogin()
+    // {
+    //     $model = new LoginForm();
+    //     if ($model->load(Yii::$app->getRequest()->getBodyParams(), '') && $model->login()) {
+    //         $user = User::findOne(['username' => $model->username]);
+    //         $generate_random_string = SSOToken::generateToken();
+    //         $user->secret_token = $generate_random_string;
+    //         $user->save();
+
+    //         $result['success'] = true;
+    //         $result['message'] = "success login";
+    //         unset($user->password); // remove password from response
+    //         $result["data"] = $user;
+
+    //         // Yii::$app->response->headers->set('secret-token', $secretToken);
+    //         return $result;
+    //     } else {
+    //         Yii::$app->response->statusCode = 401;
+    //         $result = [
+    //             'status' => 'error',
+    //             'message' => 'Email & password tidak boleh kosong!',
+    //             'data' => ["username" => $model->username, "password" => $model->password],
+    //         ];
+    //         return $result;
+    //     }
+    // }
+
+    // public function actionLogin()
+    // {
+    //     $model = new LoginForm();
+
+    //     if ($model->load(Yii::$app->request->post()) && $model->login()) {
+    //         return [
+    //             'status' => 'success',
+    //             'data' => [
+    //                 'secret_token' => Yii::$app->user->identity->getAuthKey(),
+    //                 'username' => Yii::$app->user->identity->username,
+    //             ],
+    //         ];
+    //     }
+
+    //     Yii::$app->response->statusCode = 401;
+    //     return [
+    //         'status' => 'error',
+    //         'message' => 'Invalid username or password.',
+    //     ];
+    // }
+
+
     public function actionLogin()
     {
-        $username = !empty($_POST['username']) ? $_POST['username'] : '';
-        $password = !empty($_POST['password']) ? $_POST['password'] : '';
+        // Yii::$app->response->format = Response::FORMAT_JSON;
+        // $username = Yii::$app->request->post('username');
+        // $password = Yii::$app->request->post('password');
+        // // $username = 'wahid@admin.com';
+        // // $password = 'wahid112';
+        // // $username = $_POST['username'];
+        // // $password = $_POST['password'];
+        // // var_dump($username);
+        // // var_dump($password);
+        // // die;
+        // // $user = User::findOne(['username' => $username, 'password' => $password]);
+        // $user = User::findByUsername([
+        //     "username" => Yii::$app->request->post('username'),
+        //     // "password" => $this->validatePassword(Yii::$app->request->post('password')),
+        //     // "username" => $username,
+        //     // "password" => $this->validatePassword($user->password,$_POST['password']),
+        // ]);
+
+        // if ($user !== null) {
+        //     $generate_random_string = SSOToken::generateToken();
+        //     $user->secret_token = $generate_random_string;
+        //     $user->save();
+
+        //     $result['success'] = true;
+        //     $result['message'] = "success login";
+        //     unset($user->password); // remove password from response
+        //     $result["data"] = $user;
+        //     return $result;
+        // } else {
+        //     // throw new \yii\web\HttpException(401, 'Invalid username or password');
+        //     $result = [
+        //         'status' => 'error',
+        //         'message' => 'Email & password tidak boleh kosong!',
+        //         'data' => ["username" => $username, "password" => $password],
+        //     ];
+        //     return $result;
+        // }
+
+
+
+        // $username = $_POST['username'];
+        // $password = $_POST['password'];
+        $username = Yii::$app->request->post('username');
+        $password = Yii::$app->request->post('password');
+
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $params = Yii::$app->request->post();
+
+        // $username = !empty($_POST['username']) ? $_POST['username'] : '';
+        // $password = !empty($_POST['password']) ? $_POST['password'] : '';
+        // $username = !empty(Yii::$app->request->post('username')) ? Yii::$app->request->post('username') : '';
+        // $password = !empty(Yii::$app->request->post('password')) ? Yii::$app->request->post('password') : '';
         $result = [];
+
         // validasi jika kosong
         if (empty($username) || empty($password)) {
+            // throw new \yii\web\HttpException(401, 'Invalid username or password');
+            // Yii::$app->response->format = Response::FORMAT_JSON;
+            Yii::$app->response->statusCode = 401;
             $result = [
                 'status' => 'error',
                 'message' => 'Email & password tidak boleh kosong!',
@@ -71,10 +348,16 @@ class UserController extends \yii\rest\ActiveController
         } else {
             try {
                 $user = User::findByUsername([
-                    "username" => $username,
+                    // "username" => Yii::$app->request->post('username'),
+                    'username' => $username,
+                    // "username" => $params['username'],
+                    // "password" => $this->validatePassword(Yii::$app->request->post('password')),
+                    // "username" => $username,
                     // "password" => $this->validatePassword($user->password,$_POST['password']),
                 ]);
                 if (isset($user)) {
+                    // if (\Yii::$app->security->validatePassword($params['password'], $user->password) == false)
+                    //     throw new HttpException(400, Yii::t("action_message", "Password Salah"));
                     if ($user->validatePassword($password)) {
 
                         if ($user->confirm == 0 && $user->status == 0) {
@@ -82,7 +365,7 @@ class UserController extends \yii\rest\ActiveController
                             $result["success"] = true;
                             $result["message"] = "Akun anda belum aktif,Masukkan Kode OTP Anda terlebih dahulu untuk mengaktifkan";
                             unset($user->password); // remove password from response
-                            $result["data"] = $user;
+                            $result["user"] = $user;
                         } else {
                             $generate_random_string = SSOToken::generateToken();
                             $user->secret_token = $generate_random_string;
@@ -91,26 +374,50 @@ class UserController extends \yii\rest\ActiveController
                             $result['success'] = true;
                             $result['message'] = "success login";
                             unset($user->password); // remove password from response
-                            $result["data"] = $user;
+                            $result["user"] = $user;
                         }
                     } else {
                         $result["success"] = false;
                         $result["message"] = "password salah";
-                        $result["data"] = null;
+                        $result["user"] = null;
                     }
                 } else {
                     $result["success"] = false;
                     $result["message"] = "email tidak ada";
-                    $result["data"] = null;
+                    $result["user"] = null;
                 }
             } catch (\Exception $e) {
                 $result["success"] = false;
                 $result["message"] = "email atau password salah";
-                $result["data"] = $e->getMessage();
+                $result["user"] = $e->getMessage();
+            }
+        }
+        // Yii::$app->response->format = Response::FORMAT_JSON;
+        return $result;
+    }
+
+    public function actionLogout()
+    {
+        $headers = Yii::$app->request->headers;
+        $accessToken = $headers->get('Authorization');
+        $accessToken = str_replace('Bearer ', '', $accessToken);
+
+        $user = User::findOne(['secret_token' => $accessToken]);
+        if ($user) {
+            $user->secret_token = null;
+            if ($user->save()) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return [
+                    'success' => true,
+                    'message' => 'Berhasil Logout',
+                ];
             }
         }
 
-        return $result;
+        return [
+            'success' => false,
+            'message' => 'Gagal Logout',
+        ];
     }
 
     public function actionUserView()
@@ -573,3 +880,310 @@ class UserController extends \yii\rest\ActiveController
         ];
     }
 }
+
+
+
+
+// <?php
+
+// namespace app\modules\api\modules\v1\controllers;
+
+// /**
+//  * This is the class for REST controller "UserController".
+//  */
+
+// use Yii;
+// use yii\web\HttpException;
+// use yii\web\Response;
+// use yii\web\UploadedFile;
+// use app\models\User;
+
+
+// class AuthController extends \yii\rest\ActiveController
+// {
+//     use \app\traits\MessageTrait;
+//     use \app\traits\UploadFileTrait;
+
+//     public $modelClass = 'app\models\User';
+
+//     public function behaviors()
+//     {
+//         $behaviors = parent::behaviors();
+
+//         return array_merge([
+//             'corsFilter'  => [
+//                 'class' => \yii\filters\Cors::className(),
+//                 'cors'  => [
+//                     'Origin'                           => ['http://localhost:5173',],
+//                     'Access-Control-Request-Method'    => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+//                     'Access-Control-Allow-Credentials' => true,
+//                     'Access-Control-Max-Age'           => 3600,                 // Cache (seconds)
+//                     'Access-Control-Allow-Origin'      => ['*'],
+//                     'Access-Control-Request-Headers' => ['*'],
+//                     'Access-Control-Expose-Headers' => [],
+//                 ],
+//             ],
+//             'contentNegotiator' => [
+//                 'class' => yii\filters\ContentNegotiator::className(),
+//                 'formats' => [
+//                     'application/json' => Response::FORMAT_JSON,
+//                     'application/xml' => Response::FORMAT_XML,
+//                 ],
+//             ],
+//             'verbFilter' => [
+//                 'class' => \yii\filters\VerbFilter::className(),
+//                 'actions' => $this->verbs(),
+//             ],
+//             'rateLimiter' => [
+//                 'class' => \yii\filters\RateLimiter::className(),
+//             ],
+//             'authentication' => [
+//                 'class' => \app\components\CustomAuth::class,
+//                 'except' => ['login', 'register', 'forgot-password'],
+//             ]
+//         ], $behaviors);
+
+//         return $behaviors;
+//     }
+
+//     public function actions()
+//     {
+//         $actions = parent::actions();
+//         unset($actions['index']);
+//         unset($actions['view']);
+//         unset($actions['create']);
+//         unset($actions['update']);
+//         unset($actions['delete']);
+//         return $actions;
+//     }
+
+//     function verbs()
+//     {
+//         return [
+//             'secret-method-to-check-your-token-is-valid-or-not' => ['GET', 'HEAD'],
+//             'this-is-really-really-secret-method-to-get-data-for-registration-another-module' => ['GET', 'HEAD'],
+//             'view' => ['GET', 'HEAD'],
+//             'register' => ['POST'],
+//             'login' => ['POST'],
+//             'update' => ['PUT', 'PATCH'],
+//             'forgot-password' => ['POST'],
+//         ];
+//     }
+
+//     public function actionSecretMethodToCheckYourTokenIsValidOrNot()
+//     {
+//         Yii::$app->response->format = Response::FORMAT_JSON;
+
+//         $response = (new \app\helpers\SsoTokenHelper)->checkToken();
+//         return $response;
+//     }
+
+//     public function actionThisIsReallyReallySecretMethodToGetDataForRegistrationAnotherModule()
+//     {
+//         $user = \app\models\User::findOne(["id" => Yii::$app->user->id]);
+//         if ($user == null) {
+//             throw new HttpException(404);
+//         }
+
+//         $fields = $_POST['fields'];
+
+//         $data = [];
+//         if (is_array($fields)) :
+//             foreach ($fields as $field) :
+//                 if ($user->hasAttribute($field)) :
+//                     $data[$field] = $user->$field;
+//                 endif;
+
+//             endforeach;
+//         else :
+//             if ($user->hasAttribute($fields)) :
+//                 $data[$fields] = $user->$fields;
+//             endif;
+//         endif;
+
+//         return [
+//             "success" => true,
+//             "message" => $this->messageFetchSuccess(),
+//             "data" => $data,
+//         ];
+//     }
+
+//     public function actionRegister()
+//     {
+//         Yii::$app->response->format = Response::FORMAT_JSON;
+
+
+//         $user = new \app\models\User;
+//         $user->scenario = \app\models\User::SCENARIO_REGISTER_APP;
+
+//         $request = \yii::$app->request->post();
+//         $user->load($request, '');
+
+//         $user->phone = \app\components\Constant::purifyPhone($user->phone);
+//         $user->role_id = \app\models\User::ROLE_USER_REGULER; // role
+//         if ($user->save())  {
+//             $user->password = \Yii::$app->security->generatePasswordHash($user->password);
+//             $generate_random_string = (new \app\helpers\SsoTokenHelper)->generateToken();
+//             $user->secret_token = $generate_random_string;
+//             $user->save();
+
+//             return ['success' => true, 'message' => Yii::t("action_message", "Berhasil melakukan registrasi"), 'token' => $user->secret_token];
+//         } else {
+//             throw new HttpException(422, $this->message422(
+//                 \app\components\Constant::flattenError(
+//                     $user->getErrors()
+//                 )
+//             ));
+//         }
+//     }
+
+//     public function actionLogin()
+//     {
+//         Yii::$app->response->format = Response::FORMAT_JSON;
+
+//         $params = Yii::$app->request->post();
+//         if (strtolower(Yii::$app->request->method) != "post") {
+//             throw new HttpException(405);
+//         }
+//         try {
+//             $user = \app\models\User::findByUsername($params['username']);
+//             // $valid = \app\models\User::validateUser('username', 'password');  
+//             // var_dump($user);die;
+
+//             if (isset($user)) :
+//                 if (\Yii::$app->security->validatePassword($params['password'], $user->password) == false)
+//                     throw new HttpException(400, Yii::t("action_message", "Password Salah"));
+//                 $user->scenario = $user::SCENARIO_UPDATE;
+//                 $generate_random_string = (new \app\helpers\SsoTokenHelper)->generateToken();
+//                 $user->secret_token = $generate_random_string;
+//                 $user->fcm_token = $params['fcm_token'];
+//                 $user->validate();
+//                 $user->save();
+//                 // var_dump($user);die;
+
+//                 $token = $generate_random_string;
+
+//                 return (object) [
+//                     "success" => true,
+//                     "message" => Yii::t("action_message", "Login Berhasil"),
+//                     "token" => $token,
+//                 ];
+//             endif;
+//         } catch (\Exception $e) {
+//             throw new HttpException(500, $e->getMessage());
+//         }
+
+//         throw new HttpException(400, Yii::t("action_message", "Login gagal"));
+//     }
+
+//     public function actionUpdate()
+//     {
+//         Yii::$app->response->format = Response::FORMAT_JSON;
+//         $request = Yii::$app->request->bodyParams;
+
+//         $user = \app\models\User::findOne(["id" => Yii::$app->user->id]);
+//         $photo_url = $user->photo_url;
+//         $user->scenario = $user::SCENARIO_UPDATE;
+//         $user->load($request);
+
+//         $user->phone = \app\components\Constant::purifyPhone($user->phone);
+//         $image = UploadedFile::getInstanceByName("photo_url");
+//         if ($image) {
+//             $response = $this->uploadImage($image, "user");
+//             if ($response->success == false) throw new HttpException(419, $this->messageImageFailedUpload());
+//             $user->photo_url = $response->fileName;
+//         } else {
+//             $user->photo_url = $photo_url;
+//         }
+
+//         if ($user->validate()) {
+//             $password = $request["User"]['password'];
+//             if ($password) $user->password = \Yii::$app->security->generatePasswordHash($user->password);
+
+//             $user->save();
+
+//             return [
+//                 "success" => true,
+//                 "message" => Yii::t("action_message", "Profil berhasil diubah"),
+//                 "data" => $user,
+//             ];
+//         }
+
+//         throw new HttpException(422, $this->message422(
+//             \app\components\Constant::flattenError(
+//                 $user->getErrors()
+//             )
+//         ));
+//     }
+
+//     public function actionView()
+//     {
+//         $user = \app\models\User::findOne(["id" => Yii::$app->user->id]);
+//         if ($user == null) throw new HttpException(404, $this->message404());
+
+//         return [
+//             "success" => (1 == 1),
+//             "message" => $this->messageFetchSuccess(),
+//             "data" => $user,
+//         ];
+//     }
+
+//     public function actionLogout()
+//     {
+//         $headers = Yii::$app->request->headers;
+//         $accept = $headers->get('Authorization');
+//         $model = User::find()->where(['secret_token' => $accept])->one();
+//         // var_dump($model);
+//         if (!empty($model)) {
+//             $model->secret_token = null;
+//             $model->save();
+//             // \Yii::$app->user->logout(false);
+//             Yii::$app->response->format = Response::FORMAT_JSON;
+//             return [
+//                 'success' => true,
+//                 'message' => 'Berhasil Logout',
+
+//             ];
+//         } else {
+//             return [
+//                 "success" => false,
+//                 "message" => "Gagal Logout"
+//             ];
+//         }
+//     }
+//     public function actionForgotPassword()
+// {
+//     $model = new \app\models\User;
+//     $model->scenario = \app\models\User::SCENARIO_FORGOT_PASSWORD;
+    
+
+//     if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+//         $user = User::findByEmail($model->email);
+//         if ($user) {
+//             $user->generatePasswordResetToken();
+//             if ($user->save()) {
+//                 $resetLink = Yii::$app->urlManager->createAbsoluteUrl(['site/reset-password', 'token' => $user->password_reset_token]);
+//                 $subject = 'Reset Password';
+//                 $body = "Click the link below to reset your password:\n\n$resetLink";
+//                 Yii::$app->mailer->compose()
+//                     ->setTo($user->email)
+//                     ->setSubject($subject)
+//                     ->setTextBody($body)
+//                     ->send();
+
+//                 Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
+//                 return $this->goHome();
+//             } else {
+//                 Yii::$app->session->setFlash('error', 'Failed to generate password reset token.');
+//             }
+//         } else {
+//             Yii::$app->session->setFlash('error', 'User not found.');
+//         }
+//     }
+
+//     return $this->render('forgotPassword', [
+//         'model' => $model,
+//     ]);
+// }
+
+// }

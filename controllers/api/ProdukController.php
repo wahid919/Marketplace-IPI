@@ -6,9 +6,14 @@ namespace app\controllers\api;
  * This is the class for REST controller "ProdukController".
  */
 
-use app\models\Produk;
-use app\models\ProductDetail;
+use app\models\FotoProduk;
+use app\models\ProductVariant;
 
+use app\models\Produk;
+use Yii;
+
+use app\models\ProductDetail;
+use app\models\ReviewProduk;
 use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use yii\web\Response;
@@ -19,50 +24,28 @@ use app\models\Toko;
 class ProdukController extends \yii\rest\ActiveController
 {
     public $modelClass = 'app\models\Produk';
+    public $validation  = null;
     public function behaviors()
     {
         $parent = parent::behaviors();
-        // $parent['authentication'] = [
-        //     "class" => "\app\components\CustomAuth",
-        //     "only" => ["user-view","update-profile"],
-        // ];
+        $parent['authentication'] = [
+            "class" => "\app\components\CustomAuth",
+            "except" => ["index", 'detail-produk', 'list-produk']
+        ];
 
         return $parent;
     }
-    protected function verbs()
+
+    public function verbs()
     {
         return [
-            'indexs' => ['GET'],
-            'login' => ['POST'],
-            'register' => ['POST'],
-            'check-otp' => ['POST'],
-            'refresh-otp' => ['POST'],
-            'lupa-password' => ['POST'],
-            'update-profile' => ['POST'],
-        ];
-    }
-    public function actions()
-    {
-        $actions = parent::actions();
-        // unset($actions['index']);
-        // unset($actions['view']);
-        // unset($actions['create']);
-        // unset($actions['update']);
-        // unset($actions['delete']);
-        return $actions;
-    }
-
-    public function actionIndexs()
-    {
-
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $produk = Produk::find()->all();
-
-        return [
-            'success' => true,
-            'message' => 'success',
-            'products' => $produk,
-            'productsCount' => count($produk),
+            'index' => ['GET'],
+            'view' => ['GET'],
+            'add-cart' => ['POST'],
+            'update' => ['PUT', 'PATCH'],
+            'delete' => ['DELETE'],
+            'list-keranjang' => ['GET'],
+            'product-cart' => ['GET'],
         ];
     }
 
@@ -103,34 +86,63 @@ class ProdukController extends \yii\rest\ActiveController
         return $result;
         //dd($modelProduk);
     }
-    public function actionDetailProduk($id = null)
+    public function actionDetailProduk($id = null, $toko_id)
     {
+        // Yii::$app->response->format = Response::FORMAT_JSON;
         $result = [];
         try {
             if ($id != null) {
+                $modelDetailProduk = ProductDetail::find()->where(['id_product' => $id])->all();
                 $minimumprice = ProductDetail::find()->where(['id_product' => $id])->min('harga');
                 $maximumprice = ProductDetail::find()->where(['id_product' => $id])->max('harga');
                 $averageprice = ProductDetail::find()->where(['id_product' => $id])->average('harga');
-                if ($averageprice != null) {
+                $totalstok = ProductDetail::find()->where(['id_product' => $id])->sum('stok');
+                $photogaleri = FotoProduk::find()->where(['produk_id' => $id])->all();
+                $avgrating = ReviewProduk::find()->where(['produk_id' => $id])->average('rating');
+                $countreview = ReviewProduk::find()->where(['produk_id' => $id])->count();
+                // $produk = Produk::find()->where(['id' => $id]);
+                $toko = Toko::find()->where(['id' => $toko_id])->one();
+                $getwarnas = ProductVariant::find()
+                    ->select('product_variant.*')
+                    ->innerJoin('product_detail', "product_detail_id = product_detail.id")
+                    ->where(['product_detail.id_product' => $id, 'type' => "color"])
+                    ->all();
+
+                $getsizes = ProductVariant::find()
+                    ->select('product_variant.*')
+                    ->innerJoin('product_detail', "product_detail_id = product_detail.id")
+                    ->where(['product_detail.id_product' => $id, 'type' => "size"])
+                    ->all();
+                if ($modelDetailProduk != null) {
                     $result["success"] = true;
                     $result["message"] = "success";
-                    $result["products"] = $averageprice;
+                    $result["averageprice"] = $averageprice;
+                    $result["maximumprice"] = $maximumprice;
+                    $result["minimumprice"] = $minimumprice;
+                    $result["totalstok"] = $totalstok;
+                    $result["photogaleri"] = $photogaleri;
+                    $result["getwarnas"] = $getwarnas;
+                    $result["getsizes"] = $getsizes;
+                    $result["avgrating"] = $avgrating;
+                    $result["countreview"] = $countreview;
+                    $result["toko"] = $toko;
+                    $result["data"] = $modelDetailProduk;
                 } else {
-                    $result["success"] = true;
-                    $result["message"] = "success";
-                    $result["products"] = $averageprice;
+                    $result["success"] = false;
+                    $result["message"] = "produk tidak ditemukan";
+                    $result["averageprice"] = $averageprice;
                 }
             } else {
-                $modelProduk = Produk::find()->all();
+                $modelDetailProduk = ProductDetail::find()->all();
                 $result["success"] = true;
                 $result["message"] = "success";
-                $result["products"] = $modelProduk;
+                $result["products"] = $modelDetailProduk;
             }
-            $result["productsCount"] = count($modelProduk);
+            $result["detailProductsCount"] = count($modelDetailProduk);
         } catch (\Exception $e) {
             $result["success"] = false;
             $result["message"] = "gagal";
-            $result["products"] = $modelProduk;
+            $result["products"] = $modelDetailProduk;
             //$result[""] = null;
         }
         return $result;

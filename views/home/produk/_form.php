@@ -58,12 +58,12 @@ $this->registerJs("
                         <div class="col-6">
                             <?= $form->field($model, 'nama', Constant::COLUMN(1))->textInput(['maxlength' => true]) ?>
                         </div>
-                        <div class="col-6">
+                        <!-- <div class="col-6">
                             <?= $form->field($model, 'harga', Constant::COLUMN(1))->textInput(['type' => 'number']) ?>
                         </div>
                         <div class="col-6">
                             <?= $form->field($model, 'stok', Constant::COLUMN(1))->textInput(['type' => 'number']) ?>
-                        </div>
+                        </div> -->
                         <div class="col-6">
                             <?= $form->field($model, 'foto_banner', Constant::COLUMN(1))->fileInput([
                                 'options' => ['accept' => 'image/*'],
@@ -116,10 +116,10 @@ $this->registerJs("
                     <table class="dynamicform_wrapper table table-bordered table-striped " style="margin-left: 3%;padding-right:4%;">
                         <thead>
                             <tr>
-                                <th>Berat</th>
-                                <th style="">Stok</th>
-                                <th style="">Harga</th>
                                 <th style="">Variant</th>
+                                <th style="">Harga</th>
+                                <th style="">Stok</th>
+                                <th>Berat</th>
                                 <th class="text-center" style="width: 90px;">
                                     <button type="button" class="add-house btn btn-success btn-xs"><span class="fa fa-plus"></span></button>
                                 </th>
@@ -128,6 +128,14 @@ $this->registerJs("
                         <tbody class="container-items">
                             <?php foreach ($modelsProductDetail as $indexProductDetail => $modelProductDetail) : ?>
                                 <tr class="house-item">
+
+                                    <td>
+                                        <?= $this->render('../product-variant/_form', [
+                                            'form' => $form,
+                                            'indexProductDetail' => $indexProductDetail,
+                                            'modelsProductVariant' => $modelsProductVariant[$indexProductDetail],
+                                        ]) ?>
+                                    </td>
                                     <td class="vcenter">
                                         <?php
                                         // necessary for update action.
@@ -135,7 +143,7 @@ $this->registerJs("
                                             echo Html::activeHiddenInput($modelProductDetail, "[{$indexProductDetail}]id");
                                         }
                                         ?>
-                                        <?= $form->field($modelProductDetail, "[{$indexProductDetail}]berat")->label(false)->textInput(['maxlength' => true]) ?>
+                                        <?= $form->field($modelProductDetail, "[{$indexProductDetail}]harga")->label(false)->textInput(['maxlength' => true]) ?>
                                     </td>
                                     <td class="vcenter">
                                         <?php
@@ -153,15 +161,7 @@ $this->registerJs("
                                             echo Html::activeHiddenInput($modelProductDetail, "[{$indexProductDetail}]id");
                                         }
                                         ?>
-                                        <?= $form->field($modelProductDetail, "[{$indexProductDetail}]harga")->label(false)->textInput(['maxlength' => true]) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= $this->render('../product-variant/_form', [
-                                            'form' => $form,
-                                            'indexProductDetail' => $indexProductDetail,
-                                            'modelsProductVariant' => $modelsProductVariant[$indexProductDetail],
-                                        ]) ?>
+                                        <?= $form->field($modelProductDetail, "[{$indexProductDetail}]berat")->label(false)->textInput(['maxlength' => true]) ?>
                                     </td>
                                     <td class="text-center vcenter" style="width: 90px; verti">
                                         <button type="button" class="remove-house btn btn-danger btn-xs"><span class="fa fa-minus"></span></button>
@@ -172,11 +172,11 @@ $this->registerJs("
                     </table>
                     <?php DynamicFormWidget::end(); ?>
                     <div class="row">
-                        <div class="col-3">
+                        <!-- <div class="col-3">
                             <?= $form->field($model, 'status_online', Constant::COLUMN(1))->dropDownList(
                                 ['0' => 'Tidak Aktif', '1' => 'Aktif']
                             ); ?>
-                        </div>
+                        </div> -->
                         <div class="col-3">
                             <?= $form->field($model, 'diskon_status', Constant::COLUMN(1))->dropDownList(
                                 ['0' => 'Tidak Aktif', '1' => 'Aktif']

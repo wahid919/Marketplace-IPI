@@ -55,7 +55,7 @@ if (function_exists("checkCurrentNav") == false) {
     .header__menu ul li {
         list-style: none;
         display: inline-block;
-        margin-right: 2%;
+        margin-right: 1%;
         position: relative;
     }
 
@@ -202,7 +202,7 @@ if (function_exists("checkCurrentNav") == false) {
                                 <a href="<?= Yii::$app->request->baseUrl . "/site/logout" ?>" class="nav__item-link" style="color: black;">Logout</a>
                             </div>
                         <?php } ?>
-                        <?php if (Yii::$app->user->identity->role_id == 1) { ?>
+                        <?php if (Yii::$app->user->identity->role_id != null) { ?>
                             <div class="header__top__right__auth pl-1">
                                 <a href="<?= Yii::$app->request->baseUrl . "/site/index" ?>" class="nav__item-link" style="color: black;">Halaman Admin</a>
                             </div>

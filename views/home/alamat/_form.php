@@ -141,7 +141,7 @@ use yii\bootstrap\ActiveForm;
         console.log('aaaa');
         $.ajax({
             type: 'post',
-            url: 'http://localhost:8080/ipi4/web/home/ajax-select-provinsi',
+            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-provinsi" ?>',
             success: function(htmlresponse) {
                 $("#nama_provinsi").html(htmlresponse);
                 $("#nama_provinsi").niceSelect('update');
@@ -151,7 +151,7 @@ use yii\bootstrap\ActiveForm;
             var id_provinsi_terpilih = $('option:selected', '#nama_provinsi').attr('id_provinsi');
             $.ajax({
                 type: 'post',
-                url: 'http://localhost:8080/ipi4/web/home/ajax-select-city',
+                url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-city" ?>',
                 data: 'id_provinsi=' + id_provinsi_terpilih,
                 success: function(htmlresponse) {
                     $("#alamat-idkec").html(htmlresponse);

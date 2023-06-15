@@ -7,6 +7,7 @@ use app\models\Alamat;
 use yii\grid\GridView;
 use dmstr\bootstrap\Tabs;
 use yii\widgets\DetailView;
+use app\models\ProductDetail;
 
 /**
  * @var yii\web\View $this
@@ -43,7 +44,8 @@ use yii\widgets\DetailView;
 
                         <!-- <div class="box box-info">
     <div class="box-body"> -->
-                        <?php $this->beginBlock('app\models\Produk'); ?>
+                        <?php $this->beginBlock('app\models\Produk');
+                        ?>
 
                         <?= DetailView::widget([
                             'model' => $model,
@@ -56,12 +58,21 @@ use yii\widgets\DetailView;
                                     'format' => 'raw',
                                     'filter' => false,
                                     'value' => function ($model) {
-
-                                        return \app\components\Angka::toReadableHarga($model->harga);
+                                        $averageprice = ProductDetail::find()->where(['id_product' => $model->id])->average('harga');
+                                        return \app\components\Angka::toReadableHarga($averageprice);
                                     },
                                 ],
-                                'stok',
-
+                                [
+                                    'attribute' => 'stok',
+                                    'label' => 'Stok',
+                                    'format' => 'raw',
+                                    'filter' => false,
+                                    'value' => function ($model) {
+                                        $totalstok = ProductDetail::find()->where(['id_product' => $model->id])->sum('stok');
+                                        return ($totalstok);
+                                    },
+                                ],
+                                // 'stok',
                                 [
                                     'attribute' => 'kategori_produk_id',
                                     'value' => function ($model) {

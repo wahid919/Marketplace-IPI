@@ -93,7 +93,7 @@ class HomeController extends Controller
                             'kalender', 'galeri', 'program', 'detail-program',
                             'produk', 'get-kalender', 'lupa-password', 'hubungi', 'visi', 'organisasi',
                             'membership', 'kontak', 'detail-produk', 'list-produk',
-                            'ajax-select-variant', 'ajax-select-harga', 'ajax-select-intharga', 'ajax-select-provinsi', 'ajax-select-city', 'ajax-select-paket',
+                            'ajax-select-variant', 'ajax-select-harga', 'ajax-select-intharga', 'ajax-select-provinsi', 'ajax-select-city', 'ajax-select-paket', 'ajax-select-weight'
                         ],
                         'allow' => true,
                     ],
@@ -237,7 +237,41 @@ class HomeController extends Controller
         //     ->having('count(*) = 2')
         //     ->asArray()
         //     ->one();
+    }
 
+    public function actionAjaxSelectWeight()
+    {
+        if ($warna = !null && $size = !null) {
+            $warna = $_POST['warna'];
+            $size = $_POST['size'];
+            $stokes = ProductDetailVariant::find()
+                ->select('*')
+                ->innerJoin('product_detail', "product_detail_id = product_detail.id")
+                ->where(['product_variant_id' => [$warna, $size]])
+                ->groupBy('product_detail_id')
+                ->having('count(*) = 2')
+                ->asArray()
+                ->one();
+
+            $output1 = $stokes["berat"] ?? 0;
+            // $output = rtrim($output1, '0');
+            $output = number_format($output1, 1) . ' gram';
+            return $output;
+        } else if ($warna = null && $size = !null) {
+            $stokes = ProductDetailVariant::find()
+                ->select('*')
+                ->innerJoin('product_detail', "product_detail_id = product_detail.id")
+                ->where(['product_variant_id' => [$size]])
+                ->groupBy('product_detail_id')
+                ->having('count(*) = 1')
+                ->asArray()
+                ->one();
+
+            $output1 = $stokes["berat"] ?? 0;
+            // $output = rtrim($output1, '0');
+            $output = number_format($output1, 1) . ' gram';
+            return $output;
+        }
     }
     public function actionAjaxSelectHarga()
     {
@@ -440,55 +474,64 @@ class HomeController extends Controller
 
     public function actionAjaxSelectPaket()
     {
-        $city = $_POST['city'];
+        $tokoKecamatan = $_POST['tokoKecamatan'];
+        $kecamatanPembeli = $_POST['kecamatanPembeli'];
         $ekspedisi = $_POST['ekspedisi'];
         $berat = $_POST['berat'];
-        $origin = Toko::find()->where(['id_user' => Yii::$app->user->identity->id]);
-        $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://api.rajaongkir.com/starter/cost",
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_SSL_VERIFYPEER => 0,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => "origin=31&destination=" . $city . "&weight=" . $berat . "&courier=" . $ekspedisi,
-            CURLOPT_HTTPHEADER => array(
-                "content-type: application/x-www-form-urlencoded",
-                "key: d4023dffd00b59b520c7e6ef6400deb3"
-            ),
-        ));
+        $originToko = Toko::find()->where(['idkec' => $tokoKecamatan])->all();
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
+        $results = [];
 
-        curl_close($curl);
+        foreach ($originToko as $toko) {
+            $curl = curl_init();
 
-        if ($err) {
-            echo "cURL Error #:" . $err;
-        } else {
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => "https://api.rajaongkir.com/starter/cost",
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSL_VERIFYPEER => 0,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => "origin=" . $toko->idkec . "&destination=" . $kecamatanPembeli . "&weight=" . $berat . "&courier=" . $ekspedisi,
+                CURLOPT_HTTPHEADER => array(
+                    "content-type: application/x-www-form-urlencoded",
+                    "key: d4023dffd00b59b520c7e6ef6400deb3"
+                ),
+            ));
 
-            $array_response = json_decode($response, TRUE);
-            $paket = $array_response["rajaongkir"]["results"]["0"]["costs"];
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
 
-            echo "<option value=''>--Pilih Paket--</option>";
+            curl_close($curl);
 
-            foreach ($paket as $key => $tiap_paket) {
-                echo "<option value=''            
-                paket ='" . $tiap_paket["service"] . "'
-                ongkir ='" . $tiap_paket["cost"]["0"]["value"] . "'
-                etd ='" . $tiap_paket["cost"]["0"]["etd"] . "'>";
-                echo $tiap_paket["service"] . "  ";
-                echo "Rp." . number_format($tiap_paket["cost"]["0"]["value"]) . "  ";
-                echo $tiap_paket["cost"]["0"]["etd"] . " Hari";
-                echo "</option>";
+            if ($err) {
+                echo "cURL Error #:" . $err;
+            } else {
+                $array_response = json_decode($response, TRUE);
+                $paket = $array_response["rajaongkir"]["results"][0]["costs"];
+                $results = null;
+
+                foreach ($paket as $key => $tiap_paket) {
+                    $service = $tiap_paket["service"];
+                    $value = $tiap_paket["cost"][0]["value"];
+                    $etd = $tiap_paket["cost"][0]["etd"];
+
+                    $results[] = array(
+                        'service' => $service,
+                        'value' => $value,
+                        'etd' => $etd
+                    );
+                }
             }
         }
+
+        echo json_encode($results);
     }
+
     public function actionLogin()
     {
 
@@ -619,6 +662,15 @@ class HomeController extends Controller
         $slider = Slides::find()->where(['status' => 1])->all();
         $produk = Produk::find()->limit(8)->orderBy(new Expression('rand()'))->all();
         $produks = Produk::find()->limit(3)->orderBy(new Expression('rand()'))->all();
+        $populers = Produk::find()->limit(30)->orderBy(['view_count' => SORT_DESC])->all();
+        $ratings = Produk::find()
+            ->joinWith('reviewProduks') // Melakukan join dengan tabel 'review_produk'
+            ->select('produk.*, AVG(review_produk.rating) as average_rating') // Menghitung rata-rata rating
+            ->groupBy('produk.id') // Mengelompokkan berdasarkan produk
+            ->orderBy(['average_rating' => SORT_DESC]) // Mengurutkan berdasarkan rating terbaik
+            ->limit(18)
+            ->all();
+        $latest = Produk::find()->limit(30)->orderBy(['id' => SORT_DESC])->all();
         $model = new HubungiKami;
         $kategoris = KategoriProduk::find()->all();
 
@@ -646,6 +698,9 @@ class HomeController extends Controller
             'produk' => $produk,
             'produks' => $produks,
             'kategoris' => $kategoris,
+            'populers' => $populers,
+            'ratings' => $ratings,
+            'latest' => $latest
         ]);
     }
     public function actionProduk()
@@ -680,9 +735,9 @@ class HomeController extends Controller
             $produks = $query->offset($pagination->offset)
                 ->limit($pagination->limit)
                 ->all();
-            $produkterbaru = $query->offset($pagination->offset)
+            $produkterbaru = Produk::find()->where(['kategori_produk_id' => $get_id])
                 ->orderBy(['id' => SORT_DESC])
-                ->limit($pagination->limit)
+                ->limit(30)
                 ->all();
             $summary = Constant::getPaginationSummary($pagination, $count);
         } else {
@@ -692,9 +747,9 @@ class HomeController extends Controller
             $produks = $query->offset($pagination->offset)
                 ->limit($pagination->limit)
                 ->all();
-            $produkterbaru = $query->offset($pagination->offset)
+            $produkterbaru = Produk::find()
                 ->orderBy(['id' => SORT_DESC])
-                ->limit($pagination->limit)
+                ->limit(30)
                 ->all();
             $summary = Constant::getPaginationSummary($pagination, $count);
         }
@@ -797,6 +852,15 @@ class HomeController extends Controller
 
         $stocks = ProductDetail::find()->where(['id_product' => $id])->all();
 
+        $already_view = Yii::$app->session->get('viewproduk');
+        if (is_array($already_view) == false) $already_view = [];
+        if (in_array($produk->id, $already_view) == false) {
+            $produk->view_count++;
+            $produk->save(false);
+            array_push($already_view, $produk->id);
+        }
+
+        Yii::$app->session->set('viewproduk', $already_view);
         // $getwarnas = ProductDetail::find()
         //     ->select('product_variant.*')
         //     ->innerJoin('product_variant', '`product_detail_id` = `product_detail`.`id` and`type` = "color"')
@@ -838,6 +902,11 @@ class HomeController extends Controller
         $stokones = ProductDetail::find()
             ->where(['id_product' => $id])
             ->sum('stok');
+        $weightone1 = ProductDetail::find()
+            ->where(['id_product' => $id])
+            ->average('berat');
+
+        $weightone = number_format($weightone1, 1) . ' gram';
         // ->one();
 
         // dd($stokones);
@@ -932,6 +1001,7 @@ class HomeController extends Controller
             'minimumprice' => $minimumprice,
             'maximumprice' => $maximumprice,
             'averageprice' => $averageprice,
+            'weightone' => $weightone,
         ]);
     }
 
@@ -1307,9 +1377,9 @@ class HomeController extends Controller
         ]);
     }
 
+
     public function actionUpdateProduk($id)
     {
-        // $modelPerson = $this->findModel($id);
         $model = $this->findModelProduk($id);
         $modelsProductDetail = $model->productDetail;
         $modelsProductVariant = [];
@@ -1324,52 +1394,83 @@ class HomeController extends Controller
         }
 
         $oldBanner = $model->foto_banner;
-        if ($model->load($_POST)) {
 
-            // reset
-            $modelsProductVariant = [];
+        if ($model->load(Yii::$app->request->post())) {
+            $transaction = Yii::$app->db->beginTransaction();
+            try {
+                // Reset product variants
+                $modelsProductVariant = [];
 
-            $oldProductDetailIDs = ArrayHelper::map($modelsProductDetail, 'id', 'id');
-            $modelsProductDetail = Model::createMultiple(ProductDetail::classname(), $modelsProductDetail);
-            Model::loadMultiple($modelsProductDetail, Yii::$app->request->post());
-            $deletedProductDetailIDs = array_diff($oldProductDetailIDs, array_filter(ArrayHelper::map($modelsProductDetail, 'id', 'id')));
+                $oldProductDetailIDs = ArrayHelper::map($modelsProductDetail, 'id', 'id');
+                $modelsProductDetail = Model::createMultiple(ProductDetail::classname(), $modelsProductDetail);
 
-            // validate person and houses models
-            $valid = $model->validate();
-            $valid = Model::validateMultiple($modelsProductDetail) && $valid;
+                foreach ($modelsProductDetail as $pd) {
+                    $pd->id_product = $model->id;
+                }
+                Model::loadMultiple($modelsProductDetail, Yii::$app->request->post());
+                $deletedProductDetailIDs = array_diff($oldProductDetailIDs, array_filter(ArrayHelper::map($modelsProductDetail, 'id', 'id')));
 
-            $productvariantsIDs = [];
-            if (isset($_POST['ProductVariant'][0][0])) {
-                foreach ($_POST['ProductVariant'] as $indexProductDetail => $productvariants) {
-                    $productvariantsIDs = ArrayHelper::merge($productvariantsIDs, array_filter(ArrayHelper::getColumn($productvariants, 'id')));
-                    foreach ($productvariants as $indexProductVariant => $productvariant) {
-                        $data['ProductVariant'] = $productvariant;
-                        $modelProductVariant = (isset($productvariant['id']) && isset($oldProductVariants[$productvariant['id']])) ? $oldProductVariants[$productvariant['id']] : new ProductVariant;
-                        $modelProductVariant->load($data);
-                        $modelsProductVariant[$indexProductDetail][$indexProductVariant] = $modelProductVariant;
-                        $valid = $modelProductVariant->validate();
+                // Validate models
+                $valid = $model->validate();
+                $valid = Model::validateMultiple($modelsProductDetail) && $valid;
+
+                $productvariantsIDs = [];
+                if (isset($_POST['ProductVariant'][0][0])) {
+                    foreach ($_POST['ProductVariant'] as $indexProductDetail => $productvariants) {
+                        foreach ($productvariants as $indexProductVariant => $productvariant) {
+                            $data['ProductVariant'] = $productvariant;
+                            $modelProductVariant = (isset($productvariant['id']) && isset($oldProductVariants[$productvariant['id']])) ? $oldProductVariants[$productvariant['id']] : new ProductVariant;
+                            $modelProductVariant->load($data);
+                            $modelsProductVariant[$indexProductDetail][$indexProductVariant] = $modelProductVariant;
+                            $modelProductVariant->id_produk = $model->id;
+                            if (!$modelProductVariant->validate()) {
+                                dd($modelProductVariant->getErrors());
+                                $valid = 0;
+                            }
+                        }
+                        $productvariantsIDs = ArrayHelper::merge($productvariantsIDs, ArrayHelper::getColumn($productvariants, 'id'));
                     }
                 }
-            }
 
-            $oldProductVariantsIDs = ArrayHelper::getColumn($oldProductVariants, 'id');
-            $deletedProductVariantsIDs = array_diff($oldProductVariantsIDs, $productvariantsIDs);
+                $oldProductVariantsIDs = ArrayHelper::getColumn($oldProductVariants, 'id');
+                $deletedProductVariantsIDs = array_diff($oldProductVariantsIDs, $productvariantsIDs);
 
-            if ($valid) {
-                $transaction = Yii::$app->db->beginTransaction();
-                try {
+                // dd($valid);
+                if ($valid) {
+                    // Handle foto_banner
+                    $foto_banners = UploadedFile::getInstance($model, 'foto_banner');
+                    if ($foto_banners != null) {
+                        $model->foto_banner = $foto_banners->name;
+                        $arr = explode(".", $foto_banners->name);
+                        $extension = end($arr);
+                        $model->foto_banner = Yii::$app->security->generateRandomString() . ".{$extension}";
+
+                        if (!file_exists(Yii::getAlias("@app/web/uploads/banner_produk/"))) {
+                            mkdir(Yii::getAlias("@app/web/uploads/banner_produk/"), 0777, true);
+                        }
+
+                        $path = Yii::getAlias("@app/web/uploads/banner_produk/") . $model->foto_banner;
+
+                        if ($oldBanner != null) {
+                            $foto_banners->saveAs($path);
+                            // unlink(Yii::$app->basePath . '/web/uploads/pendanaan/foto_banner/' . $oldBukti);
+                        } else {
+                            $foto_banners->saveAs($path);
+                        }
+                    } else {
+                        $model->foto_banner = $oldBanner;
+                    }
+
                     if ($flag = $model->save(false)) {
-
-                        if (!empty($deletedRoomsIDs)) {
+                        if (!empty($deletedProductVariantsIDs)) {
                             ProductVariant::deleteAll(['id' => $deletedProductVariantsIDs]);
                         }
 
-                        if (!empty($deletedHouseIDs)) {
+                        if (!empty($deletedProductDetailIDs)) {
                             ProductDetail::deleteAll(['id' => $deletedProductDetailIDs]);
                         }
 
                         foreach ($modelsProductDetail as $indexProductDetail => $modelProductDetail) {
-
                             if ($flag === false) {
                                 break;
                             }
@@ -1377,96 +1478,108 @@ class HomeController extends Controller
                             $modelProductDetail->id_product = $model->id;
 
                             if (!($flag = $modelProductDetail->save(false))) {
+                                // dd("model product detail gagal disimpan");
                                 break;
                             }
 
-                            if (isset($modelsRoom[$indexProductDetail]) && is_array($modelsProductVariant[$indexProductDetail])) {
+                            // if (isset($modelsProductVariant[$indexProductDetail]) && is_array($modelsProductVariant[$indexProductDetail])) {
+                            //     foreach ($modelsProductVariant[$indexProductDetail] as $indexProductVariant => $modelProductVariant) {
+                            //         $modelProductVariant->product_detail_id = $modelProductDetail->id;
+                            //         if (!($flag = $modelProductVariant->save(false))) {
+                            //             break;
+                            //         }
+                            //     }
+                            // }
+                            if (isset($modelsProductVariant[$indexProductDetail]) && is_array($modelsProductVariant[$indexProductDetail])) {
                                 foreach ($modelsProductVariant[$indexProductDetail] as $indexProductVariant => $modelProductVariant) {
                                     $modelProductVariant->product_detail_id = $modelProductDetail->id;
+                                    $modelProductVariant->validate();
                                     if (!($flag = $modelProductVariant->save(false))) {
+                                        // dd('product variant gagal di simpan');
+                                        break;
+                                    }
+
+                                    // inputkan detail produk variant
+                                    $newDetailVariant = ProductDetailVariant::findOne(['product_detail_id' => $modelProductDetail->id, 'product_variant_id' => $modelProductVariant->id]);
+                                    if (!$newDetailVariant) {
+                                        $newDetailVariant = new ProductDetailVariant;
+                                    }
+                                    $newDetailVariant->product_detail_id = $modelProductDetail->id;
+                                    $newDetailVariant->product_variant_id = $modelProductVariant->id;
+                                    if (!($flag = $newDetailVariant->save(false))) {
+                                        // dd('product detail variant gagal di simpan');
                                         break;
                                     }
                                 }
                             }
                         }
                     }
-                    // var_dump($modelProductDetail);
-                    // die;
-                } catch (Exception $e) {
-                    $msg = (isset($e->errorInfo[2])) ? $e->errorInfo[2] : $e->getMessage();
-                    $model->addError('_exception', $msg);
-                    $transaction->rollBack();
-                }
-            }
-
-
-            $foto_banners = UploadedFile::getInstance($model, 'foto_banner');
-            if ($foto_banners != NULL) {
-                # store the source file name
-                $model->foto_banner = $foto_banners->name;
-                $arr = explode(".", $foto_banners->name);
-                $extension = end($arr);
-
-                # generate a unique file name
-                $model->foto_banner = Yii::$app->security->generateRandomString() . ".{$extension}";
-
-                # the path to save file
-                if (file_exists(Yii::getAlias("@app/web/uploads/banner_produk/")) == false) {
-                    mkdir(Yii::getAlias("@app/web/uploads/banner_produk/"), 0777, true);
-                }
-                $path = Yii::getAlias("@app/web/uploads/banner_produk/") . $model->foto_banner;
-                if ($oldBanner != NULL) {
-
-                    $foto_banners->saveAs($path);
-                    // unlink(Yii::$app->basePath . '/web/uploads/pendanaan/foto_banner/' . $oldBukti);
                 } else {
-                    $foto_banners->saveAs($path);
+                    $flag = 0;
                 }
-            } else {
-                $model->foto_banner = $oldBanner;
-            }
-            if ($model->save()) {
+
+                // var_dump($flag);
+                // die;
 
                 if ($flag) {
                     $transaction->commit();
                     return $this->redirect(['view-produk', 'id' => $model->id]);
                 } else {
+                    // $transaction->getErrors();
                     $transaction->rollBack();
                 }
-                // return $this->redirect(Url::previous());
+            } catch (Exception $e) {
+                $msg = (isset($e->errorInfo[2])) ? $e->errorInfo[2] : $e->getMessage();
+                $model->addError('_exception', $msg);
+                $transaction->rollBack();
             }
-        } else {
-            return $this->render('produk/update', [
-                'model' => $model,
-                'modelsProductDetail' => (empty($modelsProductDetail)) ? [new ProductDetail] : $modelsProductDetail,
-                'modelsProductVariant' => (empty($modelsProductVariant)) ? [[new ProductVariant]] : $modelsProductVariant
-            ]);
         }
+
+        return $this->render('produk/update', [
+            'model' => $model,
+            'modelsProductDetail' => (empty($modelsProductDetail)) ? [new ProductDetail] : $modelsProductDetail,
+            'modelsProductVariant' => (empty($modelsProductVariant)) ? [[new ProductVariant]] : $modelsProductVariant
+        ]);
     }
+
+
+
+
     public function actionDeleteProduk($id)
     {
-        try {
-            Produk::findOne(['id' => $id])->delete();
-        } catch (\Exception $e) {
-            $msg = (isset($e->errorInfo[2])) ? $e->errorInfo[2] : $e->getMessage();
-            \Yii::$app->getSession()->addFlash('error', $msg);
-            return $this->redirect(Url::previous());
+        $model = $this->findModelProduk($id);
+        $name = $model->nama;
+
+        if ($model->delete()) {
+            Yii::$app->session->setFlash('success', 'Record  <strong>"' . $name . '"</strong> deleted successfully.');
         }
 
-        // TODO: improve detection
-        $isPivot = strstr('$id', ',');
-        if ($isPivot == true) {
-            return $this->redirect(Url::previous());
-        } elseif (isset(\Yii::$app->session['__crudReturnUrl']) && \Yii::$app->session['__crudReturnUrl'] != '/') {
-            Url::remember(null);
-            $url = \Yii::$app->session['__crudReturnUrl'];
-            \Yii::$app->session['__crudReturnUrl'] = null;
-
-            return $this->redirect($url);
-        } else {
-            return $this->redirect(['produk-saya']);
-        }
+        return $this->redirect(['index']);
     }
+    // public function actionDeleteProduk($id)
+    // {
+    //     try {
+    //         Produk::findOne(['id' => $id])->delete();
+    //     } catch (\Exception $e) {
+    //         $msg = (isset($e->errorInfo[2])) ? $e->errorInfo[2] : $e->getMessage();
+    //         \Yii::$app->getSession()->addFlash('error', $msg);
+    //         return $this->redirect(Url::previous());
+    //     }
+
+    //     // TODO: improve detection
+    //     $isPivot = strstr('$id', ',');
+    //     if ($isPivot == true) {
+    //         return $this->redirect(Url::previous());
+    //     } elseif (isset(\Yii::$app->session['__crudReturnUrl']) && \Yii::$app->session['__crudReturnUrl'] != '/') {
+    //         Url::remember(null);
+    //         $url = \Yii::$app->session['__crudReturnUrl'];
+    //         \Yii::$app->session['__crudReturnUrl'] = null;
+
+    //         return $this->redirect($url);
+    //     } else {
+    //         return $this->redirect(['produk-saya']);
+    //     }
+    // }
 
     protected function findModelProduk($id)
     {
@@ -1692,6 +1805,9 @@ class HomeController extends Controller
         $model->variant1 = (string)$request->get('variant1');
         $model->variant2 = (string)$request->get('variant2');
         $model->jumlah = intval($request->get('jumlah'));
+        $model->intv1 = intval($request->get('intv1'));
+        $model->intv2 = intval($request->get('intv2'));
+        $model->status_id = 3;
 
         if (!$model->validate()) {
             return [
@@ -1879,23 +1995,49 @@ class HomeController extends Controller
                 $sts = "Tidak Ada";
             } else {
                 if ($a->transaction_status == "pending") {
+                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                    foreach ($carts as $cart) {
+                        $cart->status_id = 3;
+                        $cart->save();
+                    };
                     $wf->status_id = 3;
                     $sts = "Ada";
                 } elseif ($a->transaction_status == "capture" || $a->transaction_status == "settlement") {
+                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                    foreach ($carts as $cart) {
+                        $cart->status_id = 2;
+                        $cart->save();
+                    };
                     $wf->status_id = 2;
                     $wf->selesai = date('Y-m-d H:i:s');
                     $sts = "Ada";
                 } elseif ($a->transaction_status == "deny") {
+                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                    foreach ($carts as $cart) {
+                        $cart->status_id = 4;
+                        $cart->save();
+                    };
                     $wf->status_id = 4;
                     $wf->selesai = date('Y-m-d H:i:s');
                     $sts = "Ada";
                 } elseif ($a->transaction_status == "cancel") {
+                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                    foreach ($carts as $cart) {
+                        $cart->status_id = 5;
+                        $cart->save();
+                    };
                     $wf->status_id = 5;
                     $wf->selesai = date('Y-m-d H:i:s');
                     $sts = "Ada";
                 } elseif ($a->transaction_status == "expire") {
+                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                    foreach ($carts as $cart) {
+                        $cart->status_id = 6;
+                        $cart->save();
+                    };
                     $wf->status_id = 6;
                     $wf->selesai = date('Y-m-d H:i:s');
+                    $wf->keterangan = "Melewati Batas Waktu Pembayaran";
                     $sts = "Ada";
                 }
             }
@@ -2173,8 +2315,8 @@ class HomeController extends Controller
 
         // Required
         $items = Keranjang::find()->where(['id_transaksi' => 0])->all();
-        var_dump($items);
-        die;
+        // var_dump($items);
+        // die;
         $items = array(
             array(
                 'id'       => 'item1',
@@ -2263,7 +2405,7 @@ class HomeController extends Controller
             $model->save();
             // $this->layout= false;
             $idsr = Yii::$app->user->identity->id;
-            Keranjang::updateAll(['id_transaksi' => $model->id], "user_id = $idsr && id_transaksi = 0 ");
+            Keranjang::updateAll(['id_transaksi' => $model->id, 'created_at2' => date('Y-m-d H:i:s')], "user_id = $idsr && id_transaksi = 0 ");
 
             return $this->redirect([
                 'view-pesanan',
@@ -2521,7 +2663,11 @@ class HomeController extends Controller
         $wf->status_id = 5;
         $wf->selesai = date('Y-m-d H:i:s');
         $wf->keterangan = "Dibatalkan Oleh Pembeli";
-
+        $carts = Keranjang::find()->where(['id_transaksi' => $id])->all();
+        foreach ($carts as $cart) {
+            $cart->status_id = 5;
+            $cart->save();
+        }
         if ($a->status_code == "404") {
             // $wf->jenis_pembayaran_id = "Tidak Ditemukan";
         } else {

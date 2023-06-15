@@ -9,9 +9,10 @@ use app\models\Menu;
 
 class SidebarMenu extends Widget
 {
-    public static function getMenu($roleId, $parentId=NULL){
+    public static function getMenu($roleId, $parentId = NULL)
+    {
         $output = [];
-        foreach(Menu::find()->where(["parent_id"=>$parentId])->all() as $menu){
+        foreach (Menu::find()->where(["parent_id" => $parentId])->all() as $menu) {
             $obj = [
                 "label" => $menu->name,
                 "icon" => $menu->icon,
@@ -19,7 +20,7 @@ class SidebarMenu extends Widget
                 "visible" => SidebarMenu::roleHasAccess($roleId, $menu->id),
             ];
 
-            if(count($menu->menus) != 0){
+            if (count($menu->menus) != 0) {
                 $obj["items"] = SidebarMenu::getMenu($roleId, $menu->id);
             }
 
@@ -28,20 +29,22 @@ class SidebarMenu extends Widget
         return $output;
     }
 
-    private static function roleHasAccess($roleId, $menuId){
-        $roleMenu = \app\models\RoleMenu::find()->where(["menu_id"=>$menuId, "role_id"=>$roleId])->one();
-        if($roleMenu){
+    private static function roleHasAccess($roleId, $menuId)
+    {
+        $roleMenu = \app\models\RoleMenu::find()->where(["menu_id" => $menuId, "role_id" => $roleId])->one();
+        if ($roleMenu) {
             return TRUE;
-        }else{
+        } else {
             return FALSE;
         }
     }
 
-    private static function getUrl($menu){
-        if($menu->controller == NULL){
+    private static function getUrl($menu)
+    {
+        if ($menu->controller == NULL) {
             return "#";
-        }else{
-            return [$menu->controller."/".$menu->action];
+        } else {
+            return [$menu->controller . "/" . $menu->action];
         }
     }
 }

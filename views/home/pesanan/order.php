@@ -1,9 +1,12 @@
 <?php
 
+use app\models\Toko;
 use yii\helpers\Url;
 use yii\helpers\Html;
 use app\models\Produk;
 use yii\grid\GridView;
+use app\models\ProductDetail;
+use app\models\ProductDetailVariant;
 
 ?>
 
@@ -154,7 +157,7 @@ use yii\grid\GridView;
                                         <input type="text" placeholder="Notes about your order, e.g. special notes for delivery.">
                                     </div>
                                 </div>
-                                <div class="col-lg-6">
+                                <!-- <div class="col-lg-6">
                                     <div class="checkout__input">
                                         <p>Ekspedisi<span>*</span></p>
                                         <select class="form-control" id="ekspedisi" name="ekspedisi" style="font-size: 16px;color: #b2b2b2;">
@@ -172,7 +175,7 @@ use yii\grid\GridView;
                                             <option value="">Ekspedisi !!!</option>
                                         </select>
                                     </div>
-                                </div>
+                                </div> -->
                             </div>
                             <br>
                             <!-- <div class="checkout__input">
@@ -183,55 +186,107 @@ use yii\grid\GridView;
                         <div class="program__info col-lg-5 col-md-6">
                             <div class="checkout__order">
                                 <h4>Your Order</h4>
-                                <div class="checkout__order__products">Products <span>Total</span></div>
-                                <?php foreach ($keranjang as $ker) {
-                                    $produkkeranjang = Produk::find()->where(['id' => $ker->produk_id])->one();
-                                    $total = $ker->harga * $ker->jumlah;
+                                <?php
+                                $tokos = Toko::find()->all();
+                                foreach ($tokos as $toko) {
+                                    $tokoHasProduk = false; // Menandakan apakah toko memiliki produk dalam keranjang atau tidak
+                                    foreach ($keranjang as $ker) {
+                                        $produkkeranjang = Produk::find()->where(['id' => $ker->produk_id])->one();
+                                        $total = $ker->harga * $ker->jumlah;
+                                        if ($produkkeranjang->toko_id == $toko->id) {
+                                            $weight = ProductDetailVariant::find()
+                                                ->select('*')
+                                                ->innerJoin('product_detail', "product_detail_id = product_detail.id")
+                                                ->where(['product_variant_id' => [$ker->intv1, $ker->intv2]])
+                                                ->groupBy('product_detail_id')
+                                                ->having('count(*) = 2')
+                                                ->asArray()
+                                                ->one();
+
+                                            $weightone = $weight["berat"] ?? 0;
+                                            // // $output = rtrim($output1, '0');
+                                            // $output = number_format($output1, 1) . ' gram';
+                                            if (!$tokoHasProduk) { // Tampilkan informasi toko hanya jika toko memiliki produk dalam keranjang dan belum ditampilkan sebelumnya
                                 ?>
-                                    <ul>
-                                        <li><?= $produkkeranjang->nama ?> <span><?= \app\components\Angka::toReadableHarga($total); ?></span></li>
-                                        <li style="line-height: 0px;font-size: 12px;">Warna: <?= $ker->variant1 ?>, Ukuran: <?= $ker->variant2 ?></li>
-                                    </ul>
-                                <?php } ?>
+                                                <div class="checkout__order__products" style="text-transform: uppercase;"><?= $toko->nama ?></div>
+                                                <div class="checkout__order__products" style="
+                                                font-size: 15px;
+                                                color: #1c1c1c;
+                                                font-weight: 700;
+                                                margin-bottom: 0%;
+                                                ">Products<span>Total</span></div>
+                                                <!-- <div class="checkout__order__products">
+                                                    <p>Nama Toko: <?= $toko->nama ?></p>
+                                                    <p>Alamat: <?= $toko->alamat ?></p>
+                                                    <p>idkec: <?= $toko->idkec ?></p>
+                                                </div> -->
+                                            <?php
+                                                $tokoHasProduk = true; // Mengubah status menjadi true karena toko memiliki produk dalam keranjang
+                                            }
+                                            ?>
+                                            <ul>
+                                                <li><?= $produkkeranjang->nama ?> <span><?= \app\components\Angka::toReadableHarga($total); ?></span></li>
+                                                <li style="line-height: 0px;font-size: 12px;">Warna: <?= $ker->variant1 ?>, Ukuran: <?= $ker->variant2 ?></li>
+                                            </ul>
+                                            <ul>
+                                                <li style="line-height: 0px;font-size: 12px; padding-top: 1%">Berat: <?= $weightone ?></li>
+                                            </ul>
+                                        <?php
+                                        }
+                                    }
+                                    if ($tokoHasProduk) { // Tampilkan bagian Ekspedisi dan Paket hanya jika toko memiliki produk dalam keranjang
+                                        ?>
+                                        <style>
+                                            .checkout__input p {
+                                                color: #1c1c1c;
+                                                margin-bottom: 2px;
+                                            }
+                                        </style>
+                                        <div class="row checkout__order__tokoi" style="padding-bottom:3%; padding-top: 5%;">
+                                            <div class="col-lg-6">
+                                                <div class="checkout__input">
+                                                    <p>Ekspedisi<span>*</span></p>
+                                                    <select class="form-control ekspedisi" data-toko="<?= $toko->idkec ?>" style="font-size: 16px;color: #b2b2b2;">
+                                                        <option value="">--Pilih Ekspedisi--</option>
+                                                        <option value="jne" tokokec="<?= $toko->idkec ?>">JNE</option>
+                                                        <option value="pos" tokokec="<?= $toko->idkec ?>">POS Indonesia</option>
+                                                        <option value="tiki" tokokec="<?= $toko->idkec ?>">TIKI</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="checkout__input">
+                                                    <p>Paket<span>*</span></p>
+                                                    <select class="form-control paket" id="paket" style="font-size: 16px;color: #b2b2b2;">
+                                                        <option value="">Ekspedisi !!!</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="checkout__order__subtotal">
+                                            Subtotal <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span>
+                                        </div>
+                                <?php
+                                    }
+                                }
+                                ?>
                                 <br>
-                                <div class="checkout__order__subtotal">Subtotal <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span></div>
-                                <!-- <div class="checkout__order__subtotal">Ongkir <span><input id="ongkirpay" name="ongkirpay" type="text"></span></div> -->
+                                <!-- <div class="checkout__order__subtotal">
+                                    Subtotal <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span>
+                                </div> -->
                                 <div class="program__text">
-                                    <div class="checkout__order__total" value="<?= $totalharga ?>">Total <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span></div>
+                                    <div class="checkout__order__total" value="<?= $totalharga ?>">
+                                        Total <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span>
+                                    </div>
                                 </div>
                                 <div class="aa" style="display: none">
                                     <div class="checkout__input">
                                         <br>
-                                        <p>harga<span>*</span></p>
-                                        <input name="har" type="text" value="<?= $totalharga ?>">
+                                        <p>Harga<span style="text-align: right;">*</span></p>
+                                        <input name="har" type="text" value="<?= $total ?>">
                                     </div>
                                 </div>
-                                <!-- <div class="checkout__input__checkbox">
-                                            <label for="acc-or">
-                                                Create an account?
-                                                <input type="checkbox" id="acc-or">
-                                                <span class="checkmark"></span>
-                                            </label>
-                                        </div>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adip elit, sed do eiusmod tempor incididunt
-                                            ut labore et dolore magna aliqua.</p>
-                                        <div class="checkout__input__checkbox">
-                                            <label for="payment">
-                                                Check Payment
-                                                <input type="checkbox" id="payment">
-                                                <span class="checkmark"></span>
-                                            </label>
-                                        </div>
-                                        <div class="checkout__input__checkbox">
-                                            <label for="paypal">
-                                                Paypal
-                                                <input type="checkbox" id="paypal">
-                                                <span class="checkmark"></span>
-                                            </label>
-                                        </div> -->
                                 <button type="button" class="site-btn btn-program" id="bayarkan">PAY ORDER</button>
-                                <!-- <button type="button" class="btn btn-sm btn-program" style="padding: 10px !important;background-color:green" id="bayarkan">Bayar</button> -->
-                                <!-- <button type="button" class="btn btn-sm btn-program" style="padding: 10px !important;background-color:green" id="bayarkan">Bayar</button> -->
                             </div>
                         </div>
                     </div>
@@ -253,7 +308,7 @@ use yii\grid\GridView;
         console.log('aaaa');
         $.ajax({
             type: 'post',
-            url: 'http://localhost:8080/ipi4/web/home/ajax-select-provinsi',
+            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-provinsi" ?>',
             success: function(htmlresponse) {
                 $("#nama_provinsi").html(htmlresponse);
                 $("#nama_provinsi").niceSelect('update');
@@ -265,7 +320,7 @@ use yii\grid\GridView;
             var id_provinsi_terpilih = $('option:selected', '#nama_provinsi').attr('id_provinsi');
             $.ajax({
                 type: 'post',
-                url: 'http://localhost:8080/ipi4/web/home/ajax-select-city',
+                url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-city" ?>',
                 data: 'id_provinsi=' + id_provinsi_terpilih,
                 success: function(htmlresponse) {
                     $("#nama_city").html(htmlresponse);
@@ -321,32 +376,80 @@ use yii\grid\GridView;
         $('#nama_city').on('change', onChangeDropdown);
         $('#ekspedisi').on('change', onChangeDropdown);
         $('#idalamat').on('change', onChangeDropdown);
+        $("#nama_city").niceSelect('update');
+        $("#ekspedisi").niceSelect('update');
+        $("#idalamat").niceSelect('update');
     });
 
     // query and ajax get paket
-    function onChangeDropdown() {
-        // var city = $('option:selected', '#nama_city').attr('id_city');
-        var city = $('option:selected', '#idalamat').attr('distrik');
-        var ekspedisi = $('#ekspedisi').val();
-        var berat = 5000;
-        // var size = $('select').selectsize('update');
-        // var warna = $('select').selectwarna('update');
-        console.log('ascaca')
-        $.ajax({
-            type: 'POST',
-            url: 'http://localhost:8080/ipi4/web/home/ajax-select-paket',
-            data: {
-                city: '' + city + '',
-                ekspedisi: '' + ekspedisi + '',
-                berat: '' + berat + '',
-            },
-            success: function(htmlresponse) {
-                $('#paket').html(htmlresponse);
-                $('#paket').niceSelect('update');
-                console.log(htmlresponse);
-            }
+    $(document).ready(function() {
+        $('.checkout__order__tokoi').each(function() {
+            var tokoContainer = $(this);
+            var ekspedisiSelect = tokoContainer.find('.ekspedisi');
+            var paketSelect = tokoContainer.find('.paket');
+
+            ekspedisiSelect.change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var ekspedisi = selectedOption.val();
+                var tokoKecamatan = $(this).data('toko');
+                var kecamatanPembeli = $('#idalamat option:selected').attr('distrik');
+
+                $.ajax({
+                    url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-paket" ?>',
+                    method: 'POST',
+                    data: {
+                        tokoKecamatan: tokoKecamatan,
+                        kecamatanPembeli: kecamatanPembeli,
+                        ekspedisi: ekspedisi,
+                        berat: 1000
+                    },
+                    success: function(response) {
+                        var options = '<option value="">Pilih Paket</option>';
+                        response = JSON.parse(response);
+
+                        for (var i = 0; i < response.length; i++) {
+                            var service = response[i].service;
+                            var value = response[i].value;
+                            var etd = response[i].etd;
+
+                            options += '<option value="' + service + '">' + service + ' - Rp.' + value + ' - ' + etd + ' Hari</option>';
+                        }
+
+                        paketSelect.html(options);
+                        paketSelect.niceSelect('update');
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(error);
+                    }
+                });
+            });
         });
-    }
+    });
+
+
+    // function onChangeDropdown() {
+    //     // var city = $('option:selected', '#nama_city').attr('id_city');
+    //     var city = $('option:selected', '#idalamat').attr('distrik');
+    //     var ekspedisi = $('#ekspedisi').val();
+    //     var berat = 5000;
+    //     // var size = $('select').selectsize('update');
+    //     // var warna = $('select').selectwarna('update');
+    //     console.log('ascaca')
+    //     $.ajax({
+    //         type: 'POST',
+    //         url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-paket" ?>',
+    //         data: {
+    //             city: '' + city + '',
+    //             ekspedisi: '' + ekspedisi + '',
+    //             berat: '' + berat + '',
+    //         },
+    //         success: function(htmlresponse) {
+    //             $('#paket').html(htmlresponse);
+    //             $('#paket').niceSelect('update');
+    //             console.log(htmlresponse);
+    //         }
+    //     });
+    // }
 
     document.querySelector("#bayarkan").addEventListener("click", () => {
         console.log('haloooooooo')

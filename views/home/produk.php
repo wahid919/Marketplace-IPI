@@ -231,52 +231,53 @@ use richardfan\widget\JSRegister;
             <div class="latest-product__text">
               <h4>Latest Products</h4>
               <div class="sidebar__item">
-                <div class="latest-product__slider owl-carousel" display="2" data-slide-auto="3" data-slide-xs="3" data-slide-md="3" data-slide-sm="3" data-slide-lg="3" data-slide-xl="3" data-autoplay="true" data-nav="" data-dots="false" data-space="20" data-loop="true" data-speed="700">
-                  <?php foreach ($produkterbaru as $pro) {
+                <div class="latest-product__slider owl-carousel" data-items="3">
+                  <?php
+                  $counter = 0;
+                  foreach ($produkterbaru as $pro) {
                     $minimumprice = ProductDetail::find()->where(['id_product' => $pro->id])->min('harga');
                     $maximumprice = ProductDetail::find()->where(['id_product' => $pro->id])->max('harga');
                     $averageprice = ProductDetail::find()->where(['id_product' => $pro->id])->average('harga');
+                    if ($counter % 3 === 0) {
+                      echo '<div class="latest-product__slider__item">';
+                    }
                   ?>
-                    <div class="latest-product__slider__item" display="3" data-slide-auto="3" data-slide-xs="3" data-slide-md="3" data-slide-sm="3" data-slide-lg="3" data-slide-xl="3">
-                      <a href="#" class="latest-product__item">
-                        <div class="latest-product__item__pic">
-                          <img src="<?= \Yii::$app->formatter->asMyImage("banner_produk/$pro->foto_banner", false, "logo.png;") ?>" alt="">
-                        </div>
-                        <div class="latest-product__item__text">
-                          <h6><?= $pro->nama ?></h6>
-                          <span><?= \app\components\Angka::toReadableHarga($averageprice); ?></span>
-                        </div>
-                      </a>
-                    </div>
-                  <?php } ?>
-                </div>
-                <script>
-                  $(document).ready(function() {
-
-                    $(".owl-carousel").owlCarousel({
-
-                      autoPlay: 3000,
-                      items: 3,
-                      itemsDesktop: [1199, 3],
-                      itemsDesktopSmall: [979, 3],
-                      center: true,
-                      nav: true,
-                      loop: true,
-                      responsive: {
-                        600: {
-                          items: 3
-                        }
+                    <style>
+                      .image-container {
+                        width: 90px;
+                        height: 90px;
+                        overflow: hidden;
+                        /* Menggunakan overflow: hidden untuk memastikan gambar tidak melebihi ukuran yang ditentukan */
                       }
 
-
-
-
-
-
-                    });
-
-                  });
-                </script>
+                      .styled-image {
+                        max-width: 100%;
+                        max-height: 100%;
+                        object-fit: cover;
+                      }
+                    </style>
+                    <a href="#" class="latest-product__item">
+                      <div class="latest-product__item__pic">
+                        <div class="image-container">
+                          <img src="<?= \Yii::$app->formatter->asMyImage("banner_produk/$pro->foto_banner", false, "logo.png;") ?>" alt="">
+                        </div>
+                      </div>
+                      <div class="latest-product__item__text">
+                        <h6><?= $pro->nama ?></h6>
+                        <span><?= \app\components\Angka::toReadableHarga($averageprice); ?></span>
+                      </div>
+                    </a>
+                  <?php
+                    $counter++;
+                    if ($counter % 3 === 0) {
+                      echo '</div>';
+                    }
+                  }
+                  if ($counter % 3 !== 0) {
+                    echo '</div>';
+                  }
+                  ?>
+                </div>
               </div>
             </div>
           </div>
@@ -381,7 +382,6 @@ use richardfan\widget\JSRegister;
           <div class="row">
             <div class="col-lg-4 col-md-5" style="margin-top: -2%">
               <div class="section-title product__discount__title">
-
                 <?php if ($get_id == !null) { ?>
                   <style>
                     h2 {
@@ -508,3 +508,23 @@ use richardfan\widget\JSRegister;
   </div>
 </section>
 <!-- Product Section End -->
+<script>
+  $(document).ready(function() {
+
+    $(".owl-carousel").owlCarousel({
+
+      autoPlay: 3000,
+      items: 3,
+      itemsDesktop: [1199, 3],
+      itemsDesktopSmall: [979, 3],
+      center: true,
+      nav: true,
+      loop: true,
+      responsive: {
+        600: {
+          items: 3
+        }
+      }
+    });
+  });
+</script>

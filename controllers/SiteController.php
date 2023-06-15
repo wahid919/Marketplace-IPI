@@ -5,20 +5,24 @@ namespace app\controllers;
 // use Endroid\QrCode\QrCode;
 // use Endroid\QrCode\ErrorCorrectionLevel;
 //use app\components\NodeLogger;
-use app\models\Action;
-use app\models\home\Registrasi as HomeRegistrasi;
-use app\components\Tanggal;
-use app\models\ContactForm;
-use app\models\LoginForm;
-use app\models\Setting;
+use Yii;
 use app\models\User;
 use kartik\mpdf\Pdf;
-use Yii;
-use yii\db\Expression;
 use yii\helpers\Url;
-use yii\web\Controller;
 use yii\web\Response;
+use app\models\Action;
+use yii\db\Expression;
+use app\models\Pesanan;
+use app\models\Setting;
+use yii\web\Controller;
+use app\models\LoginForm;
 use yii\web\UploadedFile;
+use app\components\Tanggal;
+use app\models\ContactForm;
+use yii\helpers\ArrayHelper;
+use yii\web\NotFoundHttpException;
+use app\models\search\PesananSearch;
+use app\models\home\Registrasi as HomeRegistrasi;
 
 class SiteController extends Controller
 {
@@ -48,9 +52,36 @@ class SiteController extends Controller
         $setting = Setting::find()->one();
         if ($exception !== null) {
             $this->layout = false;
-            return $this->render('errors', ['exception' => $exception,'setting' => $setting]);
+            return $this->render('errors', ['exception' => $exception, 'setting' => $setting]);
         }
     }
+
+    // public function actionIndex()
+    // {
+    //     $user = Yii::$app->user->identity;
+    //     if ($user->role_id == 8) {
+    //         return $this->render('index_pegawai');
+    //     }
+    //     $userAll = User::find()->where(['status' => 1])->count();
+    //     $investor = User::find()->where(['role_id' => 5])->count();
+    //     $operator = User::find()->where(['role_id' => 2])->all();
+    //     $marketing = User::find()->where(['role_id' => 3])->all();
+    //     $user = User::find()->where(['role_id' => 4])->all();
+
+    //     // var_dump($harian);
+    //     // die;
+
+
+
+    //     return $this->render('index', [
+    //         'userAll' => $userAll,
+    //         'investor' => $investor,
+    //         'operator' => $operator,
+    //         'marketing' => $marketing,
+    //         'user' => $user,
+
+    //     ]);
+    // }
 
     public function actionIndex()
     {
@@ -58,25 +89,50 @@ class SiteController extends Controller
         if ($user->role_id == 8) {
             return $this->render('index_pegawai');
         }
-        $userAll = User::find()->where(['status'=>1])->count();
+        $userAll = User::find()->where(['status' => 1])->count();
         $investor = User::find()->where(['role_id' => 5])->count();
         $operator = User::find()->where(['role_id' => 2])->all();
         $marketing = User::find()->where(['role_id' => 3])->all();
         $user = User::find()->where(['role_id' => 4])->all();
-        
-        // var_dump($harian);
-        // die;
-       
+        $years = Pesanan::find()->select('YEAR(created_at) as year')->distinct()->orderBy('year DESC')->column();
 
+        $selectedYear = Yii::$app->request->get('year');
 
-        return $this->render('index',[
+        if (!$selectedYear) {
+            $selectedYear = reset($years); // Mengambil tahun terbaru jika tahun tidak dipilih
+        }
+
+        $monthlyOrders = Pesanan::find()
+            ->select('MONTH(created_at) as month, COUNT(*) as count')
+            ->where(['YEAR(created_at)' => $selectedYear])
+            ->groupBy('month')
+            ->orderBy('month ASC')
+            ->asArray()
+            ->all();
+
+        return $this->render('index', [
+            'years' => $years,
+            'selectedYear' => $selectedYear,
+            'monthlyOrders' => $monthlyOrders,
             'userAll' => $userAll,
             'investor' => $investor,
             'operator' => $operator,
             'marketing' => $marketing,
             'user' => $user,
-            
         ]);
+    }
+
+    public function actionGetWeeklyOrders($year, $month)
+    {
+        $weeklyOrders = Pesanan::find()
+            ->select('WEEK(created_at) as week, COUNT(*) as count')
+            ->where(['YEAR(created_at)' => $year, 'MONTH(created_at)' => $month])
+            ->groupBy('week')
+            ->orderBy('week ASC')
+            ->asArray()
+            ->all();
+
+        return json_encode($weeklyOrders);
     }
 
     public function actionProfile()
@@ -114,7 +170,7 @@ class SiteController extends Controller
                 $model->photo_url = $oldPhotoUrl;
             }
 
-            
+
             if ($model->save()) {
                 Yii::$app->session->addFlash("success", "Profile successfully updated.");
             } else {
@@ -145,7 +201,7 @@ class SiteController extends Controller
     //     ]);
     // }
     // public function actionRegistrasi(){
-        
+
     //     $this->layout = "main-login";
 
     //     if (!\Yii::$app->user->isGuest) {
@@ -172,7 +228,7 @@ class SiteController extends Controller
 
     public function actionLogin()
     {
-        
+
         return $this->redirect(['home/login']);
         $this->layout = "main-login";
 
@@ -187,10 +243,10 @@ class SiteController extends Controller
             $user = Yii::$app->user->identity;
             $user->last_login = new Expression("NOW()");
             $user->save();
-            if($user->role_id == 3){
-                
+            if ($user->role_id == 3) {
+
                 return $this->redirect(Yii::$app->request->referrer);
-            }else{
+            } else {
                 return $this->goBack();
             }
         }
@@ -228,5 +284,4 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
-    
 }

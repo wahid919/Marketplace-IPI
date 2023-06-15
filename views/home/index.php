@@ -235,7 +235,8 @@ use richardfan\widget\JSRegister;
                                     <ul class="featured__item__pic__hover">
                                         <!-- <li><a href="#"><i class="fa fa-heart"></i></a></li> -->
                                         <li><a href="<?= Url::to(["detail-produk", "id" => $page->id]) ?>"><i class="fa fa-eye"></i></a></li>
-                                        <li><a href="#"><i class="fa fa-shopping-cart"></i></a></li>
+                                        <!-- <a href="<?= Url::to(['add-keranjang', 'id' => $produk->id]) ?>?jumlah=<?= $jumlah ?>&variant2=<?= $selectsize ?>&variant1=<?= $selectwarna ?>&harga=<?= $harga ?>"><i class="fa fa-shopping-cart"></i></a> -->
+                                        <li><a href="<?= Url::to(['add-keranjang', 'id' => $produk->id]) ?>?jumlah=${jumlah}&variant2=${selectsize}&variant1=${selectwarna}&harga=${harga}"><i class="fa fa-shopping-cart"></i></a></li>
                                     </ul>
                                 </div>
                                 <div class="featured__item__text">
@@ -301,201 +302,134 @@ use richardfan\widget\JSRegister;
 <!-- Banner End -->
 
 <!-- Latest Product Section Begin -->
+<style>
+    .image-container {
+        width: 90px;
+        height: 90px;
+        overflow: hidden;
+        /* Menggunakan overflow: hidden untuk memastikan gambar tidak melebihi ukuran yang ditentukan */
+    }
+
+    .styled-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+    }
+</style>
 <section class="latest-product spad">
     <div class="container">
         <div class="row">
             <div class="col-lg-4 col-md-6">
                 <div class="latest-product__text">
                     <h4>Latest Products</h4>
-                    <div class="latest-product__slider owl-carousel">
-                        <div class="latest-prdouct__slider__item">
-                            <a href="#" class="latest-product__item">
+                    <div class="latest-product__slider owl-carousel" data-items="3">
+                        <?php
+                        $counter = 0;
+                        foreach ($latest as $pro) {
+                            $minimumprice = ProductDetail::find()->where(['id_product' => $pro->id])->min('harga');
+                            $maximumprice = ProductDetail::find()->where(['id_product' => $pro->id])->max('harga');
+                            $averageprice = ProductDetail::find()->where(['id_product' => $pro->id])->average('harga');
+                            if ($counter % 3 === 0) {
+                                echo '<div class="latest-product__slider__item">';
+                            }
+                        ?>
+                            <a href="<?= Url::to(["detail-produk", "id" => $pro->id]) ?>" class="latest-product__item">
                                 <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-1.jpg" alt="">
+                                    <div class="image-container">
+                                        <img src="<?= \Yii::$app->formatter->asMyImage("banner_produk/$pro->foto_banner", false, "logo.png;") ?>" alt="">
+                                    </div>
                                 </div>
                                 <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
+                                    <h6><?= $pro->nama ?></h6>
+                                    <span><?= \app\components\Angka::toReadableHarga($averageprice); ?></span>
                                 </div>
                             </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-2.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-3.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="latest-prdouct__slider__item">
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-1.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-2.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-3.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                        </div>
+                        <?php
+                            $counter++;
+                            if ($counter % 3 === 0) {
+                                echo '</div>';
+                            }
+                        }
+                        if ($counter % 3 !== 0) {
+                            echo '</div>';
+                        }
+                        ?>
                     </div>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
                 <div class="latest-product__text">
                     <h4>Top Rated Products</h4>
-                    <div class="latest-product__slider owl-carousel">
-                        <div class="latest-prdouct__slider__item">
-                            <a href="#" class="latest-product__item">
+                    <div class="latest-product__slider owl-carousel" data-items="3">
+                        <?php
+                        $counter = 0;
+                        foreach ($ratings as $pro) {
+                            $minimumprice = ProductDetail::find()->where(['id_product' => $pro->id])->min('harga');
+                            $maximumprice = ProductDetail::find()->where(['id_product' => $pro->id])->max('harga');
+                            $averageprice = ProductDetail::find()->where(['id_product' => $pro->id])->average('harga');
+                            if ($counter % 3 === 0) {
+                                echo '<div class="latest-product__slider__item">';
+                            }
+                        ?>
+                            <a href="<?= Url::to(["detail-produk", "id" => $pro->id]) ?>" class="latest-product__item">
                                 <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-1.jpg" alt="">
+                                    <div class="image-container">
+                                        <img src="<?= \Yii::$app->formatter->asMyImage("banner_produk/$pro->foto_banner", false, "logo.png;") ?>" alt="">
+                                    </div>
                                 </div>
                                 <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
+                                    <h6><?= $pro->nama ?></h6>
+                                    <span><?= \app\components\Angka::toReadableHarga($averageprice); ?></span>
                                 </div>
                             </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-2.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-3.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="latest-prdouct__slider__item">
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-1.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-2.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-3.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                        </div>
+                        <?php
+                            $counter++;
+                            if ($counter % 3 === 0) {
+                                echo '</div>';
+                            }
+                        }
+                        if ($counter % 3 !== 0) {
+                            echo '</div>';
+                        }
+                        ?>
                     </div>
                 </div>
             </div>
             <div class="col-lg-4 col-md-6">
                 <div class="latest-product__text">
-                    <h4>Review Products</h4>
-                    <div class="latest-product__slider owl-carousel">
-                        <div class="latest-prdouct__slider__item">
-                            <a href="#" class="latest-product__item">
+                    <h4>Popular Products</h4>
+                    <div class="latest-product__slider owl-carousel" data-items="3">
+                        <?php
+                        $counter = 0;
+                        foreach ($populers as $pro) {
+                            $minimumprice = ProductDetail::find()->where(['id_product' => $pro->id])->min('harga');
+                            $maximumprice = ProductDetail::find()->where(['id_product' => $pro->id])->max('harga');
+                            $averageprice = ProductDetail::find()->where(['id_product' => $pro->id])->average('harga');
+                            if ($counter % 3 === 0) {
+                                echo '<div class="latest-product__slider__item">';
+                            }
+                        ?>
+                            <a href="<?= Url::to(["detail-produk", "id" => $pro->id]) ?>" class="latest-product__item">
                                 <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-1.jpg" alt="">
+                                    <div class="image-container">
+                                        <img src="<?= \Yii::$app->formatter->asMyImage("banner_produk/$pro->foto_banner", false, "logo.png;") ?>" alt="">
+                                    </div>
                                 </div>
                                 <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
+                                    <h6><?= $pro->nama ?></h6>
+                                    <span><?= \app\components\Angka::toReadableHarga($averageprice); ?></span>
                                 </div>
                             </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-2.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-3.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="latest-prdouct__slider__item">
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-1.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-2.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                            <a href="#" class="latest-product__item">
-                                <div class="latest-product__item__pic">
-                                    <img src="img/latest-product/lp-3.jpg" alt="">
-                                </div>
-                                <div class="latest-product__item__text">
-                                    <h6>Crab Pool Security</h6>
-                                    <span>$30.00</span>
-                                </div>
-                            </a>
-                        </div>
+                        <?php
+                            $counter++;
+                            if ($counter % 3 === 0) {
+                                echo '</div>';
+                            }
+                        }
+                        if ($counter % 3 !== 0) {
+                            echo '</div>';
+                        }
+                        ?>
                     </div>
                 </div>
             </div>

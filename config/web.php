@@ -19,9 +19,33 @@ $config = [
             'secretV3' => Yii::$app->params['recaptcha3.secretKey'],
         ],
         'request' => [
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'secret',
+            'parsers' => [
+                'multipart/form-data' => 'yii\web\MultipartFormDataParser',
+                'application/json' => 'yii\web\JsonParser', // enable json parser
+            ],
         ],
+        // 'request' => [
+        //     // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
+        //     'enableCsrfValidation' => false,
+        //     // 'cookieValidationKey' => '4lw4ysS3cr37',
+        //     'parsers' => [
+        //         'multipart/form-data' => 'yii\web\MultipartFormDataParser',
+        //         'application/json' => 'yii\web\JsonParser', // enable json parser
+        //     ],
+        //     'class' => 'yii\web\Request',
+        //     'cookieValidationKey' => 'secret',
+        //     'cors' => [
+        //         'class' => 'yii\filters\Cors',
+        //         'cors' => [
+        //             // Konfigurasi Cors
+        //             'Origin' => ['*'],
+        //             'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+        //             'Access-Control-Request-Headers' => ['*'],
+        //             'Access-Control-Allow-Credentials' => true,
+        //         ],
+        //     ],
+        // ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],

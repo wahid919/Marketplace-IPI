@@ -28,6 +28,7 @@ $slides = Slides::find()->where(['status' => 1])->orderBy(new Expression('rand()
         border-radius: 1.2rem;
         padding: .4rem 1rem;
         border: 1px solid #ccc;
+        margin-top: 5%;
     }
 
     #FormRegister .control-label {
@@ -38,6 +39,7 @@ $slides = Slides::find()->where(['status' => 1])->orderBy(new Expression('rand()
         left: 1.2rem;
         padding: .3rem;
         background: white;
+        margin-top: 5%;
     }
 
     /* Change autocomplete styles in WebKit */

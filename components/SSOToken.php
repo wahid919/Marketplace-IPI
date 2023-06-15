@@ -1,4 +1,5 @@
 <?php
+
 namespace app\components;
 
 use app\models\User;
@@ -7,7 +8,7 @@ use Yii;
 class SSOToken
 {
 
-    const prefix = "ISALAM";
+    const prefix = "IPIMART";
     const suffix = "S3CRETKEY";
     const padding_1 = "_";
     const padding_2 = "+";
@@ -16,7 +17,7 @@ class SSOToken
 
     public static function generateToken()
     {
-        $real_time = (string) (time()+static::Expired_In); // expired token in 5 hour after logged in
+        $real_time = (string) (time() + static::Expired_In); // expired token in 5 hour after logged in
         $half_of_time = strlen($real_time) / 2;
         $real_times = [
             substr($real_time, 0, $half_of_time),
@@ -47,7 +48,7 @@ class SSOToken
         $token = Yii::$app->request->headers->get('Authorization');
         $token = str_replace("Bearer ", "", $token);
         $user = User::findOne(['secret_token' => $token]);
-        if ($user == null):
+        if ($user == null) :
             goto end;
         endif;
 
@@ -60,7 +61,7 @@ class SSOToken
 
         $time = (int) ($plaintoken[0] . end($plaintoken));
         $now = time();
-        if ($time > $now):
+        if ($time > $now) :
             $flag = 1;
             $message = "Token Valid";
             Yii::$app->user->login($user); // logged in

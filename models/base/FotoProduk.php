@@ -25,6 +25,18 @@ abstract class FotoProduk extends \yii\db\ActiveRecord
     /**
      * @inheritdoc
      */
+    public function fields()
+    {
+        $parent = parent::fields();
+        if (isset($parent['foto'])) {
+            unset($parent['foto']);
+            $parent['foto'] = function ($model) {
+                return Yii::getAlias("@file/foto_produk/$model->foto");
+            };
+        }
+
+        return $parent;
+    }
     public static function tableName()
     {
         return 'foto_produk';
@@ -63,8 +75,4 @@ abstract class FotoProduk extends \yii\db\ActiveRecord
     {
         return $this->hasOne(\app\models\Produk::className(), ['id' => 'produk_id']);
     }
-
-
-
-
 }

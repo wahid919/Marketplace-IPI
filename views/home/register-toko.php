@@ -173,33 +173,36 @@ $slides = Slides::find()->where(['status' => 1])->orderBy(new Expression('rand()
         </div>
     </div>
 </div>
+<script>
+    $.ajax({
+        type: 'post',
+        url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-provinsi" ?>',
+        success: function(htmlresponse) {
+            $("#nama_provinsi").html(htmlresponse);
+            $("#nama_provinsi").niceSelect('update');
+        }
+    })
+    $("#nama_provinsi").on("change", function() {
+        var id_provinsi_terpilih = $('option:selected', '#nama_provinsi').attr('id_provinsi');
+        $.ajax({
+            type: 'post',
+            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-city" ?>',
+            data: 'id_provinsi=' + id_provinsi_terpilih,
+            success: function(htmlresponse) {
+                $("#toko-idkec").html(htmlresponse);
+                $("#toko-idkec").niceSelect('update');
+            }
+        });
+    });
+    $('#toko-idkec').on("change", function() {
+        var pos = $('option:selected', '#toko-idkec').attr('kodepos');
+        $("input[id=toko-kodepos]").val(pos);
+    });
+</script>
 
 <?php
 $js = <<<JS
-$.ajax({
-            type: 'post',
-            url: 'http://localhost:8080/ipi4/web/home/ajax-select-provinsi',
-            success: function(htmlresponse) {
-                $("#nama_provinsi").html(htmlresponse);
-                $("#nama_provinsi").niceSelect('update');
-            }
-        })
-        $("#nama_provinsi").on("change", function() {
-            var id_provinsi_terpilih = $('option:selected', '#nama_provinsi').attr('id_provinsi');
-            $.ajax({
-                type: 'post',
-                url: 'http://localhost:8080/ipi4/web/home/ajax-select-city',
-                data: 'id_provinsi=' + id_provinsi_terpilih,
-                success: function(htmlresponse) {
-                    $("#toko-idkec").html(htmlresponse);
-                    $("#toko-idkec").niceSelect('update');
-                }
-            });
-        });
-        $('#toko-idkec').on("change", function() {
-            var pos = $('option:selected', '#toko-idkec').attr('kodepos');
-            $("input[id=toko-kodepos]").val(pos);
-        });
+
 JS;
 
 $this->registerJs($js);

@@ -709,7 +709,7 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                     if (size && warna) {
                         $.ajax({
                             type: 'POST',
-                            url: 'http://localhost:8080/ipi4/web/home/ajax-select-variant',
+                            url: 'http://localhost:8080//web/home/ajax-select-variant',
                             data: {
                                 size: '' + size + '',
                                 warna: '' + warna + '',
@@ -1305,7 +1305,7 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
             if (level) {
                 $.ajax({
                     type: 'POST',
-                    url: 'http://localhost:8080/ipi4/web/home/AjaxSelect',
+                    url: 'http://localhost:8080//web/home/AjaxSelect',
                     data: {
                         hps_level: '' + level + ''
                     },

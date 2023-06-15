@@ -40,7 +40,7 @@ class User extends \yii\db\ActiveRecord
         if (isset($parent['photo_url'])) {
             unset($parent['photo_url']);
             $parent['photo_url'] = function ($model) {
-                return Yii::getAlias("@file/$model->photo_url");
+                return Yii::getAlias("@file/user_image/$model->photo_url");
             };
         }
         if (!isset($parent['aktif'])) {

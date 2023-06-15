@@ -23,7 +23,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
             <div class="user-form">
 
-                <?php $form = ActiveForm::begin([
+                <?php $form = ActiveForm::begin(
+                    [
                         'id' => 'User',
                         'layout' => 'horizontal',
                         'enableClientValidation' => false,
@@ -41,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?= $form->field($model, 'password')->passwordInput(['maxlength' => true, 'autocomplete' => "off"]) ?>
                         <?= $form->field($model, 'pin')->passwordInput(['maxlength' => true, 'autocomplete' => "off"]) ?>
                         <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
-                        <?= $form->field($model, 'nomor_handphone')->textInput(['type' => 'number','maxlength' => true]) ?>
+                        <?= $form->field($model, 'nomor_handphone')->textInput(['type' => 'number', 'maxlength' => true]) ?>
                         <?= $form->field($model, 'photo_url')->widget(\kartik\file\FileInput::className(), [
                             'options' => ['accept' => 'image/*'],
                             'pluginOptions' => [
@@ -50,44 +51,44 @@ $this->params['breadcrumbs'][] = $this->title;
                             ],
                         ]) ?>
                         <?php
-                        if($model->photo_url != null){
-                            ?>
+                        if ($model->photo_url != null) {
+                        ?>
                             <div class="form-group">
                                 <div class="col-sm-6 col-sm-offset-3">
-                                    <?= Html::img(["uploads/".$model->photo_url], ["width"=>"150px"]); ?>
+                                    <?= Html::img(["uploads/" . $model->photo_url], ["width" => "150px"]); ?>
                                 </div>
                             </div>
-                            <?php
+                        <?php
                         } ?>
-                        
-                    </p>
-                    <?php $this->endBlock(); ?>
 
-                    <?=
-                    Tabs::widget(
-                        [
-                            'encodeLabels' => false,
-                            'items' => [[
-                                'label' => 'User',
-                                'content' => $this->blocks['main'],
-                                'active' => true,
-                            ],]
-                        ]
-                    );
-                    ?>
-                    <hr/>
-                    <?php echo $form->errorSummary($model); ?>
-                    <?= Html::submitButton(
-                        '<span class="glyphicon glyphicon-check"></span> ' .
-                        ($model->isNewRecord ? 'Create' : 'Save'),
-                        [
-                            'id' => 'save-' . $model->formName(),
-                            'class' => 'btn btn-success'
-                        ]
-                    );
-                    ?>
+                        </p>
+                        <?php $this->endBlock(); ?>
 
-                    <?php ActiveForm::end(); ?>
+                        <?=
+                        Tabs::widget(
+                            [
+                                'encodeLabels' => false,
+                                'items' => [[
+                                    'label' => 'User',
+                                    'content' => $this->blocks['main'],
+                                    'active' => true,
+                                ],]
+                            ]
+                        );
+                        ?>
+                        <hr />
+                        <?php echo $form->errorSummary($model); ?>
+                        <?= Html::submitButton(
+                            '<span class="glyphicon glyphicon-check"></span> ' .
+                                ($model->isNewRecord ? 'Create' : 'Save'),
+                            [
+                                'id' => 'save-' . $model->formName(),
+                                'class' => 'btn btn-success'
+                            ]
+                        );
+                        ?>
+
+                        <?php ActiveForm::end(); ?>
 
                 </div>
 
@@ -97,6 +98,6 @@ $this->params['breadcrumbs'][] = $this->title;
 
     </div>
 
-   
+
 
 </div>

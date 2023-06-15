@@ -5,6 +5,10 @@
 namespace app\models\base;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
+
+use yii\db\Expression;
+
 
 /**
  * This is the base-model class for table "produk".
@@ -44,6 +48,22 @@ abstract class Produk extends \yii\db\ActiveRecord
                 return $toko;
             };
         }
+        if (isset($parent['view_count'])) {
+            unset($parent['view_count']);
+
+            $parent['view_count'] = function ($model) {
+                $interval = $model->view_count;
+                return $interval;
+            };
+        }
+
+        if (isset($parent['foto_banner'])) {
+            unset($parent['foto_banner']);
+            $parent['foto_banner'] = function ($model) {
+                return Yii::getAlias("@file/banner_produk/$model->foto_banner");
+            };
+        }
+
         // if (!isset($parent['kategori_produk'])) {
         //     unset($parent['kategori_produk']);
         //     $parent['kategori_produk'] = function ($model) {
@@ -64,15 +84,26 @@ abstract class Produk extends \yii\db\ActiveRecord
     {
         return 'produk';
     }
-
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::className(),
+                'createdAtAttribute' => 'created_at',
+                'updatedAtAttribute' => 'updated_at',
+                'value' => new Expression('NOW()'),
+            ],
+        ];
+    }
     /**
      * @inheritdoc
      */
     public function rules()
     {
         return [
-            [['nama', 'harga', 'stok', 'kategori_produk_id', 'toko_id', 'deskripsi_singkat', 'deksripsi_lengkap'], 'required'],
-            [['harga', 'stok', 'kategori_produk_id', 'toko_id', 'status_online', 'flag', 'diskon_status', 'diskon'], 'integer'],
+            // [['nama', 'harga', 'stok', 'kategori_produk_id', 'toko_id', 'deskripsi_singkat', 'deksripsi_lengkap'], 'required'],
+            [['nama', 'kategori_produk_id', 'toko_id', 'deskripsi_singkat', 'deksripsi_lengkap'], 'required'],
+            [['harga', 'stok', 'kategori_produk_id', 'toko_id', 'status_online', 'flag', 'diskon_status', 'diskon', 'view_count'], 'integer'],
             [['deskripsi_singkat', 'deksripsi_lengkap'], 'string'],
             [['created_at'], 'safe'],
             [['nama', 'foto_banner'], 'string', 'max' => 255],
@@ -101,6 +132,7 @@ abstract class Produk extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
             'diskon_status' => 'Diskon Status',
             'diskon' => 'Diskon',
+            'view_count' => 'View Count',
         ];
     }
 

@@ -58,47 +58,47 @@ abstract class Pesanan extends \yii\db\ActiveRecord
             unset($parent['url']);
 
             $parent['url'] = function ($model) {
-                return 'https://app.midtrans.com/snap/v2/vtweb/' . $model->token_midtrans;
+                return 'https://app.sandbox.midtrans.com/snap/v2/vtweb/' . $model->token_midtrans;
             };
         }
-        if (isset($parent['status_id'])) {
-            unset($parent['status_id']);
-            $parent['status'] = function ($model) {
-                $curl = curl_init();
-                curl_setopt_array($curl, array(
-                    CURLOPT_URL => "https://api.sandbox.midtrans.com/v2/" . $model->invoice . "/status",
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => "",
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 0,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => "GET",
-                    CURLOPT_POSTFIELDS => "\n\n",
-                    CURLOPT_HTTPHEADER => array(
-                        "Accept: application/json",
-                        "Content-Type: application/json",
-                        "Authorization: Basic U0ItTWlkLXNlcnZlci1LZk9IdElZUWRNLW1aY1IwR2xzbEprMjg6"
-                    ),
-                ));
+        // if (isset($parent['status_id'])) {
+        //     unset($parent['status_id']);
+        //     $parent['status'] = function ($model) {
+        //         $curl = curl_init();
+        //         curl_setopt_array($curl, array(
+        //             CURLOPT_URL => "https://api.sandbox.midtrans.com/v2/" . $model->invoice . "/status",
+        //             CURLOPT_RETURNTRANSFER => true,
+        //             CURLOPT_ENCODING => "",
+        //             CURLOPT_MAXREDIRS => 10,
+        //             CURLOPT_TIMEOUT => 0,
+        //             CURLOPT_FOLLOWLOCATION => true,
+        //             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //             CURLOPT_CUSTOMREQUEST => "GET",
+        //             CURLOPT_POSTFIELDS => "\n\n",
+        //             CURLOPT_HTTPHEADER => array(
+        //                 "Accept: application/json",
+        //                 "Content-Type: application/json",
+        //                 "Authorization: Basic U0ItTWlkLXNlcnZlci1LZk9IdElZUWRNLW1aY1IwR2xzbEprMjg6"
+        //             ),
+        //         ));
 
-                $response = curl_exec($curl);
+        //         $response = curl_exec($curl);
 
-                curl_close($curl);
-                $a = json_decode($response);
-                if ($a->status_code == "404") {
-                    return "Pending";
-                } else {
-                    if ($a->transaction_status == "pending") {
-                        return "Pending";
-                    } elseif ($a->transaction_status == "capture" || $a->transaction_status == "settlement") {
-                        return "Pembayaran Berhasil";
-                    } elseif ($a->transaction_status == "deny" || $a->transaction_status == "cancel" || $a->transaction_status == "expire") {
-                        return "Pembayaran Gagal";
-                    }
-                }
-            };
-        }
+        //         curl_close($curl);
+        //         $a = json_decode($response);
+        //         if ($a->status_code == "404") {
+        //             return "Pending";
+        //         } else {
+        //             if ($a->transaction_status == "pending") {
+        //                 return "Pending";
+        //             } elseif ($a->transaction_status == "capture" || $a->transaction_status == "settlement") {
+        //                 return "Pembayaran Berhasil";
+        //             } elseif ($a->transaction_status == "deny" || $a->transaction_status == "cancel" || $a->transaction_status == "expire") {
+        //                 return "Pembayaran Gagal";
+        //             }
+        //         }
+        //     };
+        // }
         unset($parent['updated_at']);
         unset($parent['created_at']);
 

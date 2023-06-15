@@ -210,7 +210,9 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                             </li>
 
                             <li><b>Shipping</b> <span>01 day shipping. <samp>Free pickup today</samp></span></li>
-                            <li><b>Weight</b> <span>0.5 kg</span></li>
+                            <li><b>Weight</b> <span id="weightone">
+                                    <?= $weightone ?>
+                                </span></li>
                             <li><b>Share on</b>
                                 <div class="share">
                                     <a href="https://www.facebook.com/sharer/sharer.php?u=<URL>"><i class="fa fa-facebook"></i></a>
@@ -427,13 +429,35 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                     if (size && warna) {
                         $.ajax({
                             type: 'POST',
-                            url: 'http://localhost:8080/ipi4/web/home/ajax-select-variant',
+                            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-variant" ?>',
                             data: {
                                 size: '' + size + '',
                                 warna: '' + warna + '',
                             },
                             success: function(htmlresponse) {
                                 $('#stokones').html(htmlresponse);
+                                console.log(htmlresponse);
+                            }
+                        });
+                    }
+                }
+
+                function onChangeDropdownWeight() {
+                    var size = $('#selectsize').val();
+                    var warna = $('#selectwarna').val();
+                    // var size = $('select').selectsize('update');
+                    // var warna = $('select').selectwarna('update');
+                    console.log('aaaaaaaaaaa')
+                    if (size && warna) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-weight" ?>',
+                            data: {
+                                size: '' + size + '',
+                                warna: '' + warna + '',
+                            },
+                            success: function(htmlresponse) {
+                                $('#weightone').html(htmlresponse);
                                 console.log(htmlresponse);
                             }
                         });
@@ -451,7 +475,7 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                     if (size && warna) {
                         $.ajax({
                             type: 'POST',
-                            url: 'http://localhost:8080/ipi4/web/home/ajax-select-harga',
+                            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-harga" ?>',
                             data: {
                                 size: '' + size + '',
                                 warna: '' + warna + '',
@@ -464,7 +488,7 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                         });
                         $.ajax({
                             type: 'POST',
-                            url: 'http://localhost:8080/ipi4/web/home/ajax-select-intharga',
+                            url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-intharga" ?>',
                             data: {
                                 siz: '' + siz + '',
                                 war: '' + war + '',
@@ -487,6 +511,8 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                     $('#selectwarna').on('change', onChangeDropdown);
                     $('#selectsize').on('change', onChangeDropdownHarga);
                     $('#selectwarna').on('change', onChangeDropdownHarga);
+                    $('#selectsize').on('change', onChangeDropdownWeight);
+                    $('#selectwarna').on('change', onChangeDropdownWeight);
                 })
 
                 //save to keranjang
@@ -495,13 +521,15 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                     let jumlah = document.querySelector("#jumlah").value;
                     let selectwarna = $('option:selected', '#selectwarna').attr('warnastring');
                     let selectsize = $('option:selected', '#selectsize').attr('sizestring');
+                    var intv1 = $('#selectsize').val();
+                    var intv2 = $('#selectwarna').val();
                     var stok = document.querySelector("#stokones").textContent;
                     <?php if (Yii::$app->user->identity->id == !null) { ?>
                         if (!(selectwarna == null || selectsize == null)) {
                             console.log(stok);
                             if (!(stok == 0)) {
                                 $.ajax({
-                                    url: `<?= Url::to(['add-keranjang', 'id' => $produk->id]) ?>?jumlah=${jumlah}&variant2=${selectsize}&variant1=${selectwarna}&harga=${harga}`,
+                                    url: `<?= Url::to(['add-keranjang', 'id' => $produk->id]) ?>?jumlah=${jumlah}&variant2=${selectsize}&variant1=${selectwarna}&harga=${harga}&intv1=${intv1}&intv2=${intv2}`,
                                     success: (response) => {
                                         swal.fire({
                                                 title: "<?= $produk->nama ?>",
