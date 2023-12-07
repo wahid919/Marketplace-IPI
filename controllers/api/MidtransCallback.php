@@ -7,7 +7,7 @@ namespace app\controllers\api;
  */
 
 use yii\filters\AccessControl;
-use app\models\Pesanan;
+use app\models\DetailPesanan;
 
 use Yii;
 
@@ -15,7 +15,7 @@ use yii\helpers\ArrayHelper;
 
 class MidtransCallback extends \yii\rest\ActiveController
 {
-    public $modelClass = 'app\models\Pesanan';
+    public $modelClass = 'app\models\DetailPesanan';
     public function callback()
     // https://834b-182-1-75-92.ap.ngrok.io -> http://localhost:8080
     {
@@ -24,8 +24,8 @@ class MidtransCallback extends \yii\rest\ActiveController
         $hashed = hash("sha15", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
         if ($hashed == $request->signature_key) {
             if ($request->transaction_status == 'capture') {
-                $pesanan = new Pesanan();
-                $pesanan = Pesanan::find()->where(['invoice' => $request->order_id]);
+                $pesanan = new DetailPesanan();
+                $pesanan = DetailPesanan::find()->where(['invoice' => $request->order_id]);
                 $pesanan->status_id = 2;
                 $pesanan->save();
             }

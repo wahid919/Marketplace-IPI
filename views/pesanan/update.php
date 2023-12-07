@@ -3,12 +3,12 @@
 use yii\helpers\Html;
 
 /**
-* @var yii\web\View $this
-* @var app\models\Pesanan $model
-*/
+ * @var yii\web\View $this
+ * @var app\models\DetailPesanan $model
+ */
 
-$this->title = 'Pesanan ' . $model->id . ', ' . 'Edit';
-$this->params['breadcrumbs'][] = ['label' => 'Pesanan', 'url' => ['index']];
+$this->title = 'DetailPesanan ' . $model->id . ', ' . 'Edit';
+$this->params['breadcrumbs'][] = ['label' => 'DetailPesanan', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => (string)$model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Edit';
 ?>
@@ -18,5 +18,5 @@ $this->params['breadcrumbs'][] = 'Edit';
 </p>
 
 <?php echo $this->render('_form', [
-'model' => $model,
+    'model' => $model,
 ]); ?>

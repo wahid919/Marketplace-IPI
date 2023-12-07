@@ -17,6 +17,7 @@ use app\models\User;
 use Midtrans\Config;
 use Mpdf\Tag\Select;
 use yii\helpers\Url;
+use yii\base\Request;
 use yii\web\Response;
 use app\models\Alamat;
 use app\models\Galeri;
@@ -27,6 +28,7 @@ use app\models\Pesanan;
 use app\models\Setting;
 use yii\web\Controller;
 use yii\data\Pagination;
+use yii\helpers\Console;
 use app\models\Keranjang;
 use app\models\LoginForm;
 use dmstr\bootstrap\Tabs;
@@ -35,19 +37,21 @@ use app\models\base\Model;
 use app\models\FotoProduk;
 use app\models\Keuntungan;
 use app\models\NilaiSikap;
+use yii\helpers\VarDumper;
 use yii\web\HttpException;
 use app\models\HubungiKami;
 use yii\filters\VerbFilter;
 use app\components\Constant;
 use app\models\ReviewProduk;
 use yii\helpers\ArrayHelper;
+use app\models\DetailPesanan;
 use app\models\ProductDetail;
 use app\components\UploadFile;
+
 use app\models\KategoriProduk;
 use app\models\ProductVariant;
 use yii\filters\AccessControl;
 use app\models\StrukturOrganisasi;
-
 use app\models\search\AlamatSearch;
 use app\models\ProductDetailVariant;
 use app\models\search\PesananSearch;
@@ -56,9 +60,6 @@ use app\models\search\ProdukSayaSearch;
 use app\components\ActionMidtransConfig;
 use app\models\search\KeranjangSayaSearch;
 use app\models\home\Registrasi as HomeRegistrasi;
-use yii\base\Request;
-use yii\helpers\Console;
-use yii\helpers\VarDumper;
 
 /**
  * This is the class for controller "BeritaController".
@@ -89,7 +90,7 @@ class HomeController extends Controller
                 'rules' => [
                     [
                         'actions' => [
-                            'login', 'registrasi', 'error', 'index', 'news', 'detail-berita', 'about',
+                            'login', 'registrasi', 'error', 'index', 'news', 'detail-berita', 'about', 'member',
                             'kalender', 'galeri', 'program', 'detail-program',
                             'produk', 'get-kalender', 'lupa-password', 'hubungi', 'visi', 'organisasi',
                             'membership', 'kontak', 'detail-produk', 'list-produk',
@@ -138,8 +139,18 @@ class HomeController extends Controller
         // if (Yii::$app->request->isAjax) {
         //     return $this->renderAjax("registrasi", compact("model"));
         // }
-
+        $pondok = Toko::find()->select(['id', 'nama'])->all();
+        // var_dump($pondok);
+        // die;
         if ($model->load($_POST)) {
+            // $pondok_id = $_POST('asal_pondok');
+            $pondok_nama = Toko::find()->select('nama')->where(['id' => $model->asal_pondok])->scalar();
+            // var_dump($pondok_nama);
+            // die;
+            $asalPondok = ($model->asal_pondok === 'other') ? $model->other_asal_pondok : $pondok_nama;
+
+            $model->asal_pondok = $asalPondok;
+
             // var_dump($model->registrasi());die;
             if ($model->registrasi()) {
                 Yii::$app->session->setFlash("success", "Pendaftaran berhasil. Silahkan login");
@@ -154,6 +165,7 @@ class HomeController extends Controller
         // }
         return $this->render('registrasi', [
             'model' => $model,
+            'pondok' => $pondok
         ]);
     }
 
@@ -400,7 +412,7 @@ class HomeController extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_HTTPHEADER => array(
-                "key: d4023dffd00b59b520c7e6ef6400deb3"
+                "key: 654728f94c01d4867dd03c62a82adea3"
             ),
         ));
 
@@ -441,7 +453,7 @@ class HomeController extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_HTTPHEADER => array(
-                "key: d4023dffd00b59b520c7e6ef6400deb3"
+                "key: 654728f94c01d4867dd03c62a82adea3"
             ),
         ));
 
@@ -499,7 +511,7 @@ class HomeController extends Controller
                 CURLOPT_POSTFIELDS => "origin=" . $toko->idkec . "&destination=" . $kecamatanPembeli . "&weight=" . $berat . "&courier=" . $ekspedisi,
                 CURLOPT_HTTPHEADER => array(
                     "content-type: application/x-www-form-urlencoded",
-                    "key: d4023dffd00b59b520c7e6ef6400deb3"
+                    "key: 654728f94c01d4867dd03c62a82adea3"
                 ),
             ));
 
@@ -726,33 +738,183 @@ class HomeController extends Controller
         // $produk = Produk::find()->limit(6)->all();
         // $produks = Produk::find()->orderBy(new Expression('rand()'))->one();
 
+        // if (isset($_GET['kategori'])) {
+        //     $kategori = $_GET['kategori'];
+        //     $get_id = KategoriProduk::find()->where(['nama' => $kategori])->one();
+        //     $query = Produk::find()->where(['kategori_produk_id' => $get_id]);
+        //     $discount = Produk::find()
+        //         ->where(['kategori_produk_id' => $get_id])
+        //         ->andWhere(['!=', 'diskon', 0])
+        //         ->andWhere(['=', 'diskon_status', 1]);
+        //     // echo '<pre>';
+        //     // var_dump($discount);
+        //     // die;
+        //     $count = $query->count();
+        //     $countdiscount = $discount->count();
+        //     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 9]);
+        //     $paginationdiscount = new Pagination(['totalCount' => $countdiscount, 'pageSize' => 9]);
+        //     $produks = $query->offset($pagination->offset)
+        //         ->limit($pagination->limit)
+        //         ->all();
+        //     $produkscdiscount = $discount->offset($paginationdiscount->offset)
+        //         ->limit($paginationdiscount->limit)
+        //         ->all();
+        //     // var_dump($produks);
+        //     $produkterbaru = Produk::find()->where(['kategori_produk_id' => $get_id])
+        //         ->orderBy(['id' => SORT_DESC])
+        //         ->limit(30)
+        //         ->all();
+        //     $summary = Constant::getPaginationSummary($pagination, $count);
+        //     if (isset($_GET['cari'])) {
+        //         $kategori = $_GET['kategori'];
+        //         $get_id = KategoriProduk::find()->where(['nama' => $kategori])->one();
+        //         $query = Produk::find()->where(['kategori_produk_id' => $get_id]);
+        //         $discount = Produk::find()
+        //             ->where(['kategori_produk_id' => $get_id])
+        //             ->andWhere(['!=', 'diskon', 0])
+        //             ->andWhere(['=', 'diskon_status', 1])
+        //             ->andWhere(['like', 'nama', $_GET['cari']]);
+        //         // echo '<pre>';
+        //         // var_dump($discount);
+        //         // die;
+        //         $count = $query->count();
+        //         $countdiscount = $discount->count();
+        //         $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 9]);
+        //         $paginationdiscount = new Pagination(['totalCount' => $countdiscount, 'pageSize' => 9]);
+        //         $produks = $query->andWhere((['like', 'nama', $_GET['cari']]))->offset($pagination->offset)
+        //             ->limit($pagination->limit)
+        //             ->all();
+        //         $produkscdiscount = $discount->andWhere((['like', 'nama', $_GET['cari']]))->offset($paginationdiscount->offset)
+        //             ->limit($paginationdiscount->limit)
+        //             ->all();
+        //         // var_dump($produks);
+        //         $produkterbaru = Produk::find()->where(['kategori_produk_id' => $get_id])->andWhere((['like', 'nama', $_GET['cari']]))
+        //             ->orderBy(['id' => SORT_DESC])
+        //             ->limit(30)
+        //             ->all();
+        //         $summary = Constant::getPaginationSummary($pagination, $count);
+        //     }
+        // } else {
+        //     $query = Produk::find();
+        //     $discount = Produk::find()
+        //         ->where(['diskon_status' => 1])
+        //         ->andWhere(['!=', 'diskon', 0]);
+        //     $count = $query->count();
+        //     $countdiscount = $discount->count();
+        //     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 9]);
+        //     $paginationdiscount = new Pagination(['totalCount' => $countdiscount, 'pageSize' => 9]);
+        //     $produks = $query->offset($pagination->offset)
+        //         ->limit($pagination->limit)
+        //         ->all();
+        //     $produkterbaru = Produk::find()
+        //         ->orderBy(['id' => SORT_DESC])
+        //         ->limit(30)
+        //         ->all();
+        //     $produkscdiscount = $discount->offset($paginationdiscount->offset)
+        //         ->limit($paginationdiscount->limit)
+        //         ->all();
+        //     $summary = Constant::getPaginationSummary($pagination, $count);
+        //     if (isset($_GET['cari'])) {
+        //         $query = Produk::find();
+        //         $discount = Produk::find()
+        //             ->where(['diskon_status' => 1])
+        //             ->andWhere(['!=', 'diskon', 0])
+        //             ->andWhere((['like', 'nama', $_GET['cari']]));
+        //         $count = $query->count();
+        //         $countdiscount = $discount->count();
+        //         $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 9]);
+        //         $paginationdiscount = new Pagination(['totalCount' => $countdiscount, 'pageSize' => 9]);
+        //         $produks = $query->andWhere((['like', 'nama', $_GET['cari']]))->offset($pagination->offset)
+        //             ->limit($pagination->limit)
+        //             ->all();
+        //         $produkterbaru = Produk::find()->andWhere((['like', 'nama', $_GET['cari']]))->offset($pagination->offset)
+        //             ->orderBy(['id' => SORT_DESC])
+        //             ->limit(30)
+        //             ->all();
+        //         $produkscdiscount = $discount->andWhere((['like', 'nama', $_GET['cari']]))->offset($paginationdiscount->offset)
+        //             ->limit($paginationdiscount->limit)
+        //             ->all();
+        //         $summary = Constant::getPaginationSummary($pagination, $count);
+        //     }
+        // }
+
+        // 
+        // 
+        // 
+        $produks = Produk::find();
+        $produkscdiscount = Produk::find()
+            ->where(['diskon_status' => 1])
+            ->andWhere(['!=', 'diskon', 0]);
         if (isset($_GET['kategori'])) {
             $kategori = $_GET['kategori'];
             $get_id = KategoriProduk::find()->where(['nama' => $kategori])->one();
-            $query = Produk::find()->where(['kategori_produk_id' => $get_id]);
-            $count = $query->count();
-            $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 9]);
-            $produks = $query->offset($pagination->offset)
-                ->limit($pagination->limit)
-                ->all();
-            $produkterbaru = Produk::find()->where(['kategori_produk_id' => $get_id])
-                ->orderBy(['id' => SORT_DESC])
-                ->limit(30)
-                ->all();
-            $summary = Constant::getPaginationSummary($pagination, $count);
-        } else {
-            $query = Produk::find();
-            $count = $query->count();
-            $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 9]);
-            $produks = $query->offset($pagination->offset)
-                ->limit($pagination->limit)
-                ->all();
-            $produkterbaru = Produk::find()
-                ->orderBy(['id' => SORT_DESC])
-                ->limit(30)
-                ->all();
-            $summary = Constant::getPaginationSummary($pagination, $count);
+            $produks->andWhere(['kategori_produk_id' => $get_id]);
+            $produkscdiscount->where(['kategori_produk_id' => $get_id]);
         }
+        if (isset($_GET['cari'])) {
+            $produks->andWhere(['like', 'nama', $_GET['cari']]);
+            $produkscdiscount->andWhere((['like', 'nama', $_GET['cari']]));
+        }
+        if (isset($_GET['sort'])) {
+            switch (intval($_GET['sort'])) {
+                case 1:
+                    $produks->orderBy(['created_at' => SORT_DESC]);
+                    $produkscdiscount->orderBy(['created_at' => SORT_DESC]);
+                    break;
+                case 2:
+                    $produks->orderBy(['updated_at' => SORT_DESC]);
+                    break;
+                case 3:
+                    // $query->andWhere(['kategori_berita_id' => $kategori->id]);
+
+                    $produks->orderBy(['view_count' => SORT_DESC]);
+                    break;
+                case 4:
+                    $produks->orderBy(['created_at' => SORT_DESC]);
+                    break;
+            }
+        }
+        if (isset($_GET['sort'])) {
+            switch (intval($_GET['sort'])) {
+                case 1:
+                    break;
+                case 2:
+                    $produkscdiscount->orderBy(['updated_at' => SORT_DESC]);
+                    break;
+                case 3:
+                    // $query->andWhere(['kategori_berita_id' => $kategori->id]);
+
+                    $produkscdiscount->orderBy(['view_count' => SORT_DESC]);
+                    break;
+                case 4:
+                    $produkscdiscount->orderBy(['created_at' => SORT_DESC]);
+                    break;
+            }
+        }
+
+        $cloned =  $produks;
+        $count = $cloned->count();
+        $pagination = new Pagination([
+            "totalCount" => $count,
+            "pageSize" => 9
+        ]);
+        $produks = $produks->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+
+        // 
+        $clonedpd =  $produkscdiscount;
+        $countpd = $clonedpd->count();
+        $paginationpd = new Pagination([
+            "totalCount" => $countpd,
+            "pageSize" => 9
+        ]);
+        $produkscdiscount = $produkscdiscount->offset($paginationpd->offset)
+            ->limit($paginationpd->limit)
+            ->all();
+
+        $summary = Constant::getPaginationSummary($pagination, $count);
+
 
         // if ($model->load($_POST)) {
 
@@ -772,7 +934,8 @@ class HomeController extends Controller
             // 'produk' => $produk,            
             'produks' => $produks,
             'pagination' => $pagination,
-            'produkterbaru' => $produkterbaru,
+            // 'produkterbaru' => $produkterbaru,
+            'produkscdiscount' => $produkscdiscount,
             'summary' => $summary,
             'get_id' => $get_id,
             // 'snapToken' => $snapToken,
@@ -1009,6 +1172,7 @@ class HomeController extends Controller
 
     public function actionAbout()
     {
+        //about ipi
         $setting = Setting::find()->one();
         $slides = Slides::find()->where(['status' => 1])->orderBy(new Expression('rand()'))->one();
         $icon = \Yii::$app->request->baseUrl . "/uploads/setting/" . $setting->logo;
@@ -1020,6 +1184,14 @@ class HomeController extends Controller
         $keuntungans = Keuntungan::find()->all();
         $model = new HubungiKami;
 
+        //member of ipi
+        $members = Toko::find();
+        $count = $members->count();
+        $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 6]);
+        $member = $members->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+        $summary = Constant::getPaginationSummary($pagination, $count);
 
 
         if ($model->load($_POST)) {
@@ -1043,7 +1215,26 @@ class HomeController extends Controller
             'icon' => $icon,
             'bg_login' => $bg_login,
             'bg' => $bg,
-            'model' => $model
+            'model' => $model,
+            //member of ipi
+            'member' => $member,
+            'summary' => $summary,
+            'pagination' => $pagination
+        ]);
+    }
+    public function actionMember()
+    {
+        $members = Toko::find();
+        $count = $members->count();
+        $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 6]);
+        $member = $members->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+        $summary = Constant::getPaginationSummary($pagination, $count);
+        return $this->render('member', [
+            'member' => $member,
+            'summary' => $summary,
+            'pagination' => $pagination
         ]);
     }
 
@@ -1973,86 +2164,90 @@ class HomeController extends Controller
         // $stt = $request->get('transaction_status');
         // var_dump($stt);
         // die;
-        $data_all = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id])->all();
 
-        $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id]);
-        $count = $query->count();
-        $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 6]);
-        $pesanans = $query->offset($pagination->offset)
-            ->where(['usrid' => Yii::$app->user->identity->id])
-            ->limit($pagination->limit)
-            ->orderBy(['id' => SORT_DESC])
-            ->all();
-        foreach ($data_all as $data) {
-            $wf = Pesanan::find()->where(['id' => $data->id])->one();
-            // $a = $this->findMidtrans($wf->kode_transaksi);
-            $a = $this->findMidtrans($wf->invoice);
-            // var_dump($a);
-            // die;
+        $allpesanan = Pesanan::find()->where(['user_id' => Yii::$app->user->identity->id])->all();
+        foreach ($allpesanan as $pesanan) {
+            $data_all = DetailPesanan::find()->where(['pesanan_id' => $pesanan->id])->all();
+            $query = DetailPesanan::find()->where(['pesanan_id' => $pesanan->id]);
+            $count = $query->count();
+            $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 6]);
+            $pesanans = $query->offset($pagination->offset)
+                ->where(['usrid' => Yii::$app->user->identity->id])
+                ->limit($pagination->limit)
+                ->orderBy(['id' => SORT_DESC])
+                ->all();
+            foreach ($data_all as $data) {
+                $wf = DetailPesanan::find()->where(['id' => $data->id])->one();
+                // $a = $this->findMidtrans($wf->kode_transaksi);
+                $a = $this->findMidtrans($wf->invoice);
 
-            if ($a->status_code == "404") {
-                $wf->status_id = $wf->status_id;
-                $sts = "Tidak Ada";
-            } else {
-                if ($a->transaction_status == "pending") {
-                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
-                    foreach ($carts as $cart) {
-                        $cart->status_id = 3;
-                        $cart->save();
-                    };
-                    $wf->status_id = 3;
-                    $sts = "Ada";
-                } elseif ($a->transaction_status == "capture" || $a->transaction_status == "settlement") {
-                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
-                    foreach ($carts as $cart) {
-                        $cart->status_id = 2;
-                        $cart->save();
-                    };
-                    $wf->status_id = 2;
-                    $wf->selesai = date('Y-m-d H:i:s');
-                    $sts = "Ada";
-                } elseif ($a->transaction_status == "deny") {
-                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
-                    foreach ($carts as $cart) {
-                        $cart->status_id = 4;
-                        $cart->save();
-                    };
-                    $wf->status_id = 4;
-                    $wf->selesai = date('Y-m-d H:i:s');
-                    $sts = "Ada";
-                } elseif ($a->transaction_status == "cancel") {
-                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
-                    foreach ($carts as $cart) {
-                        $cart->status_id = 5;
-                        $cart->save();
-                    };
-                    $wf->status_id = 5;
-                    $wf->selesai = date('Y-m-d H:i:s');
-                    $sts = "Ada";
-                } elseif ($a->transaction_status == "expire") {
-                    $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
-                    foreach ($carts as $cart) {
-                        $cart->status_id = 6;
-                        $cart->save();
-                    };
-                    $wf->status_id = 6;
-                    $wf->selesai = date('Y-m-d H:i:s');
-                    $wf->keterangan = "Melewati Batas Waktu Pembayaran";
-                    $sts = "Ada";
-                }
-            }
-            // var_dump($wf);
-            // die;
-            if ($a->status_code == "404") {
-                // $wf->jenis_pembayaran_id = "Tidak Ditemukan";
-            } else {
-                if ($a->payment_type == "cstore") {
-                    // $wf->jenis_pembayaran_id = $a->store;
+                // var_dump($a);
+                // die;
+
+                if ($a->status_code == "404") {
+                    $wf->status_id = $wf->status_id;
+                    $sts = "Tidak Ada";
                 } else {
-                    // $wf->jenis_pembayaran_id = $a->payment_type;
+                    if ($a->transaction_status == "pending") {
+                        $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                        foreach ($carts as $cart) {
+                            $cart->status_id = 3;
+                            $cart->save();
+                        };
+                        $wf->status_id = 3;
+                        $sts = "Ada";
+                    } elseif ($a->transaction_status == "capture" || $a->transaction_status == "settlement") {
+                        $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                        foreach ($carts as $cart) {
+                            $cart->status_id = 2;
+                            $cart->save();
+                        };
+                        $wf->status_id = 2;
+                        $wf->selesai = date('Y-m-d H:i:s');
+                        $sts = "Ada";
+                    } elseif ($a->transaction_status == "deny") {
+                        $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                        foreach ($carts as $cart) {
+                            $cart->status_id = 4;
+                            $cart->save();
+                        };
+                        $wf->status_id = 4;
+                        $wf->selesai = date('Y-m-d H:i:s');
+                        $sts = "Ada";
+                    } elseif ($a->transaction_status == "cancel") {
+                        $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                        foreach ($carts as $cart) {
+                            $cart->status_id = 5;
+                            $cart->save();
+                        };
+                        $wf->status_id = 5;
+                        $wf->selesai = date('Y-m-d H:i:s');
+                        $sts = "Ada";
+                    } elseif ($a->transaction_status == "expire") {
+                        $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+                        foreach ($carts as $cart) {
+                            $cart->status_id = 6;
+                            $cart->save();
+                        };
+                        $wf->status_id = 6;
+                        $wf->selesai = date('Y-m-d H:i:s');
+                        $wf->keterangan = "Melewati Batas Waktu Pembayaran";
+                        $sts = "Ada";
+                    }
                 }
+                // var_dump($wf);
+                // die;
+                if ($a->status_code == "404") {
+                    // $wf->jenis_pembayaran_id = "Tidak Ditemukan";
+                } else {
+                    if ($a->payment_type == "cstore") {
+                        // $wf->jenis_pembayaran_id = $a->store;
+                    } else {
+                        // $wf->jenis_pembayaran_id = $a->payment_type;
+                    }
+                }
+                $wf->save();
             }
-            $wf->save();
         }
         return $this->render('pesanan/index', [
             'dataProvider' => $dataProvider,
@@ -2060,9 +2255,91 @@ class HomeController extends Controller
             'pagination' => $pagination,
             'pesanans' => $pesanans,
         ]);
+
+        // $data_all = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id])->all();
+
+        // $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id]);
+        // $count = $query->count();
+        // $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 6]);
+        // $pesanans = $query->offset($pagination->offset)
+        //     ->where(['usrid' => Yii::$app->user->identity->id])
+        //     ->limit($pagination->limit)
+        //     ->orderBy(['id' => SORT_DESC])
+        //     ->all();
+        // foreach ($data_all as $data) {
+        //     $wf = DetailPesanan::find()->where(['id' => $data->id])->one();
+        //     // $a = $this->findMidtrans($wf->kode_transaksi);
+        //     $a = $this->findMidtrans($wf->invoice);
+        //     // var_dump($a);
+        //     // die;
+
+        //     if ($a->status_code == "404") {
+        //         $wf->status_id = $wf->status_id;
+        //         $sts = "Tidak Ada";
+        //     } else {
+        //         if ($a->transaction_status == "pending") {
+        //             $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+        //             foreach ($carts as $cart) {
+        //                 $cart->status_id = 3;
+        //                 $cart->save();
+        //             };
+        //             $wf->status_id = 3;
+        //             $sts = "Ada";
+        //         } elseif ($a->transaction_status == "capture" || $a->transaction_status == "settlement") {
+        //             $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+        //             foreach ($carts as $cart) {
+        //                 $cart->status_id = 2;
+        //                 $cart->save();
+        //             };
+        //             $wf->status_id = 2;
+        //             $wf->selesai = date('Y-m-d H:i:s');
+        //             $sts = "Ada";
+        //         } elseif ($a->transaction_status == "deny") {
+        //             $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+        //             foreach ($carts as $cart) {
+        //                 $cart->status_id = 4;
+        //                 $cart->save();
+        //             };
+        //             $wf->status_id = 4;
+        //             $wf->selesai = date('Y-m-d H:i:s');
+        //             $sts = "Ada";
+        //         } elseif ($a->transaction_status == "cancel") {
+        //             $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+        //             foreach ($carts as $cart) {
+        //                 $cart->status_id = 5;
+        //                 $cart->save();
+        //             };
+        //             $wf->status_id = 5;
+        //             $wf->selesai = date('Y-m-d H:i:s');
+        //             $sts = "Ada";
+        //         } elseif ($a->transaction_status == "expire") {
+        //             $carts = Keranjang::find()->where(['id_transaksi' => $data->id])->all();
+        //             foreach ($carts as $cart) {
+        //                 $cart->status_id = 6;
+        //                 $cart->save();
+        //             };
+        //             $wf->status_id = 6;
+        //             $wf->selesai = date('Y-m-d H:i:s');
+        //             $wf->keterangan = "Melewati Batas Waktu Pembayaran";
+        //             $sts = "Ada";
+        //         }
+        //     }
+        //     // var_dump($wf);
+        //     // die;
+        //     if ($a->status_code == "404") {
+        //         // $wf->jenis_pembayaran_id = "Tidak Ditemukan";
+        //     } else {
+        //         if ($a->payment_type == "cstore") {
+        //             // $wf->jenis_pembayaran_id = $a->store;
+        //         } else {
+        //             // $wf->jenis_pembayaran_id = $a->payment_type;
+        //         }
+        //     }
+        //     $wf->save();
+        // }
     }
     /**
-     * Displays a single Pesanan model.
+     * Displays a single DetailPesanan model.
      * @param integer $id
      *
      * @return mixed
@@ -2073,28 +2350,52 @@ class HomeController extends Controller
 
         // \Yii::$app->session['__crudReturnUrl'] = Url::previous();
         Url::remember();
+        $totalharga = 0;
         // Tabs::rememberActiveState();
+        $pesanan = Pesanan::find()->where(['id' => $id])->one();
+        // $totalharga = $pesanan->nominal;
+        $detailpesanan = DetailPesanan::find()->where(['pesanan_id' => $id])->all();
+        // echo '<pre>';
+        // var_dump($detailpesanan);
+        // die;
+        foreach ($detailpesanan as $detpesanan) {
+            $query = (new Query())
+                ->select('*')
+                ->from('keranjang k')
+                ->join('JOIN', 'produk p', 'k.produk_id = p.id')
+                // ->join('JOIN', 'product_detail pd', 'p.id = pd.id_product')
+                ->where(['k.id_transaksi' => $detpesanan->id]);
 
-        $keranjang_pesan = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $id])->all();
-        $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $id])->sum('harga*jumlah');
+            $keranjang = $query->all();
+            // echo '<pre>';
+            // var_dump($keranjang);
+            // die;
+            $keranjang_pesan = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detpesanan->id])->all();
+            // $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detpesanan->id])->sum('harga*jumlah');
+        }
+
+        $model = $this->findPesanan($id);
         // $produk_pesan = Produk::find()->where(['id' => $keranjang_pesan->produk_id]);
         // var_dump($produk_pesan);
         // die;
         return $this->render('pesanan/view', [
-            'model' => $this->findPesanan($id),
+            'model' => $model,
+            'keranjang' => $keranjang,
             'keranjang_pesan' => $keranjang_pesan,
-            'totalharga' => $totalharga
+            'totalharga' => $totalharga,
+            'detailpesanan' => $detailpesanan,
+            'pesanan' => $pesanan,
         ]);
     }
 
     /**
-     * Creates a new Pesanan model.
+     * Creates a new DetailPesanan model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
     public function actionCreatePesanan()
     {
-        $model = new Pesanan;
+        $model = new DetailPesanan;
 
         try {
             if ($model->load($_POST) && $model->save()) {
@@ -2110,7 +2411,7 @@ class HomeController extends Controller
     }
 
     /**
-     * Updates an existing Pesanan model.
+     * Updates an existing DetailPesanan model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param integer $id
      * @return mixed
@@ -2129,7 +2430,7 @@ class HomeController extends Controller
     }
 
     /**
-     * Deletes an existing Pesanan model.
+     * Deletes an existing DetailPesanan model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param integer $id
      * @return mixed
@@ -2159,10 +2460,10 @@ class HomeController extends Controller
         }
     }
     /**
-     * Finds the Pesanan model based on its primary key value.
+     * Finds the DetailPesanan model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param integer $id
-     * @return Pesanan the loaded model
+     * @return DetailPesanan the loaded model
      * @throws HttpException if the model cannot be found
      */
     protected function findPesanan($id)
@@ -2279,8 +2580,21 @@ class HomeController extends Controller
 
 
 
-    public function actionPembayaran($totalbayar, $tujuan, $berat, $ongkir, $kurir, $paket, $alamatpembeli)
+    public function actionPembayaran()
     {
+
+        $totalbayar = $_POST['totalbayar'];
+        $tujuan = $_POST['tujuan'];
+        $kodepospembeli = $_POST['kodepospembeli'];
+        $berat = $_POST['berat'];
+        $paket = $_POST['paket'];
+        $kurir = $_POST['kurir'];
+        $alamatpembeli = $_POST['alamatpembeli'];
+        // var_dump($totalbayar);
+        // die;
+
+        // var_dump($kurir);
+        // die;
         // $totalbayar = $_POST['totalbayar'];
         // $kodepospembeli = $_POST['kodepospembeli'];
         // $alamatpembeli = $_POST['alamatpembeli'];
@@ -2307,6 +2621,7 @@ class HomeController extends Controller
 
         $confirm = Yii::$app->user->identity->confirm;
         $status = Yii::$app->user->identity->status;
+        $idsr = Yii::$app->user->identity->id;
         if ($confirm != 1 || $status != 1) {
             return $this->redirect(["home/index"]);
         }
@@ -2379,63 +2694,88 @@ class HomeController extends Controller
         $snapToken = \app\components\ActionMidtransSnap::getSnapToken($params);
         // var_dump($snapToken); die;
         // if ($totalbayar = !null) {
-        $model = new Pesanan();
+        $pesanan = new Pesanan();
+        $pesanan->created_at = date('Y-m-d H:i:s');
+        $pesanan->user_id = $idsr;
+        $pesanan->invoice = $order_id_midtrans;
+        $pesanan->token_midtrans = $snapToken;
+        $pesanan->nominal = $totalbayar;
+        $pesanan->save();
 
-        $model->invoice = $order_id_midtrans;
-        $model->nama = Yii::$app->user->identity->name;
-        $model->nominal = $totalbayar;
-        $model->usrid  = Yii::$app->user->identity->id;
-        $model->alamat_pembeli = $alamatpembeli;
-        $model->alamat_penjual = 'akslakas';
-        $model->berat = (int)$berat;
-        $model->ongkir = (int)$ongkir;
-        $model->kurir = $kurir;
-        $model->paket = $paket;
-        $model->dari = (int)11;
-        $model->tujuan = $tujuan;
-        $model->resi =  "TRX" . $order_id_midtrans;
-        $model->id_bayar = 2;
-        $model->ajukanbatal = 1;
-        $model->keterangan = "Proses";
-        $model->status_id = 3;
-        $model->token_midtrans = $snapToken;
-        if ($model->validate()) {
-            // var_dump($model->validate());
+        // die(var_dump($result))
+        // $keranjang = Keranjang::find()->where(["user_id = $idsr && id_transaksi = 0"])->all();
+        $query = (new Query())
+            ->select('*')
+            ->from('keranjang k')
+            ->join('JOIN', 'produk p', 'k.produk_id = p.id')
+            ->join('JOIN', 'product_detail pd', 'p.id = pd.id_product')
+            ->where(['k.user_id' => $idsr, 'k.id_transaksi' => 0]);
+
+        $keranjang = $query->all();
+
+        // echo '<pre>';
+        // die(var_dump($keranjang));
+
+        $mapByToko = null;
+
+        foreach ($keranjang as $ker) {
+            $mapByToko[$ker['toko_id']][] = $ker;
+        }
+
+        foreach ($mapByToko as $toko_id => $listProduk) {
+            $totalbayar = 0;
+            $berat = 0;
+            $idkec_penjual = Toko::find()->select('idkec')->where(['id' => $toko_id])->one();
+            // var_dump($idkec_penjual->idkec);
             // die;
+            foreach ($listProduk as $produk) {
+                $totalbayar = $kurir[$toko_id]['harga_paket'] + $produk['harga'];
+            }
+            $model = new DetailPesanan();
+            $model->toko_id = $toko_id;
+            $model->pesanan_id = $pesanan->id;
+            $model->invoice = $order_id_midtrans;
+            $model->nama = Yii::$app->user->identity->name;
+            $model->nominal = $totalbayar;
+            $model->usrid  = Yii::$app->user->identity->id;
+            $model->alamat_pembeli = $alamatpembeli;
+            $model->alamat_penjual = $idkec_penjual->idkec;
+            $model->berat = (int)$berat;
+            $model->ongkir = $kurir[$toko_id]['harga_paket'];
+            $model->kurir = $kurir[$toko_id]['ekspedisi'];
+            $model->paket = $paket;
+            $model->dari = (int)11;
+            $model->tujuan = $tujuan;
+            $model->resi =  null;
+            $model->id_bayar = 2;
+            $model->ajukanbatal = 1;
+            $model->keterangan = "Proses";
+            $model->status_id = 3;
+            $model->token_midtrans = $snapToken;
+
             $model->save();
             // $this->layout= false;
             $idsr = Yii::$app->user->identity->id;
-            Keranjang::updateAll(['id_transaksi' => $model->id, 'created_at2' => date('Y-m-d H:i:s')], "user_id = $idsr && id_transaksi = 0 ");
 
-            return $this->redirect([
-                'view-pesanan',
-                'id' => $model->id,
-            ]);
-            // return $this->render('pesanan/halo', [
-            //     'snapToken' => $snapToken,
-            //     'order'
-            // ]);
-            // return $this->render(['pesanan/halo']);
-            // return ['success' => true, 'message' => 'success', 'data' => $model, 'code' => $hasil_code,'url'=>$hasil];
-        } else if (!$model->validate()) {
-            Yii::$app->response->format = Response::FORMAT_JSON;
-            return [
-                'success' => false,
-                'message' => $model->getErrors()
-            ];
-        } else {
-
-            return $this->redirect(['detail_program', 'id' => $pendanaan->id]);
-            // return ['success' => false, 'message' => 'gagal', 'data' => $model->getErrors()];
-
-            // Yii::$app->response->format = Response::FORMAT_JSON;
-
-            // return [
-            //     'success' => true,
-            //     'url' => $paymentUrl
-            // ];
-            // }
+            Yii::$app->db->createCommand("
+            UPDATE keranjang k
+            JOIN produk p
+            on k.produk_id = p.id
+            join toko t 
+            on t.id = p.toko_id
+            set id_transaksi = $model->id
+            where k.user_id = $idsr
+            and k.id_transaksi = 0
+            and t.id = $toko_id")->execute();
+            // Keranjang::updateAll(['id_transaksi' => $model->id, 'created_at2' => date('Y-m-d H:i:s')], "user_id = $idsr && id_transaksi = 0 ");
         }
+
+        echo  json_encode([
+            'success' => true,
+            'data' => 'okee',
+        ]);
+
+        // Yii::$app->getResponse()->redirect(['pesanan'])->send();
     }
     public function actionPembayaranOrigin()
     {
@@ -2658,23 +2998,37 @@ class HomeController extends Controller
         }
         // var_dump('yes');
         // die;
-        $wf = Pesanan::findOne(['id' => $id]);
-        $a = $this->findMidtransCancel($wf->invoice);
-        $wf->status_id = 5;
-        $wf->selesai = date('Y-m-d H:i:s');
-        $wf->keterangan = "Dibatalkan Oleh Pembeli";
-        $carts = Keranjang::find()->where(['id_transaksi' => $id])->all();
-        foreach ($carts as $cart) {
-            $cart->status_id = 5;
-            $cart->save();
-        }
-        if ($a->status_code == "404") {
-            // $wf->jenis_pembayaran_id = "Tidak Ditemukan";
-        } else {
-            if ($a->payment_type == "cstore") {
-                // $wf->jenis_pembayaran_id = $a->store;
+        $pesanans  = Pesanan::find()->where(['id' => $id])->one();
+        $a = $this->findMidtransCancel($pesanans->invoice);
+        $detail = DetailPesanan::find()->where(['pesanan_id' => $id])->all();
+        // Yii::$app->db->createCommand("
+        //     UPDATE detail-pesanan k
+        //     JOIN pesanan p
+        //     on k.produk_id = p.id
+        //     join toko t 
+        //     on t.id = p.toko_id
+        //     set id_transaksi = $model->id
+        //     where k.user_id = $idsr
+        //     and k.id_transaksi = 0
+        //     and t.id = $toko_id")->execute();
+        DetailPesanan::updateAll(['status_id' => 5, 'selesai' => date('Y-m-d H:i:s'), 'keterangan' => "Dibatalkan Oleh Pembeli"], "pesanan_id = $pesanans->id");
+        foreach ($detail as $wf) {
+            // $wf->status_id = 5;
+            // $wf->selesai = date('Y-m-d H:i:s');
+            // $wf->keterangan = "Dibatalkan Oleh Pembeli";
+            $carts = Keranjang::find()->where(['id_transaksi' => $id])->all();
+            foreach ($carts as $cart) {
+                $cart->status_id = 5;
+                $cart->save();
+            }
+            if ($a->status_code == "404") {
+                // $wf->jenis_pembayaran_id = "Tidak Ditemukan";
             } else {
-                // $wf->jenis_pembayaran_id = $a->payment_type;
+                if ($a->payment_type == "cstore") {
+                    // $wf->jenis_pembayaran_id = $a->store;
+                } else {
+                    // $wf->jenis_pembayaran_id = $a->payment_type;
+                }
             }
         }
         if ($wf->save()) {
@@ -2695,8 +3049,8 @@ class HomeController extends Controller
         $hashed = hash("sha15", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
         if ($hashed == $request->signature_key) {
             if ($request->transaction_status == 'capture') {
-                $pesanan = new Pesanan();
-                $pesanan = Pesanan::find()->where(['invoice' => $request->order_id]);
+                $pesanan = new DetailPesanan();
+                $pesanan = DetailPesanan::find()->where(['invoice' => $request->order_id]);
                 $pesanan->status_id = 2;
                 $pesanan->save();
             }

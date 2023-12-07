@@ -2882,17 +2882,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/kartik-v/yii2-widget-select2.git",
-                "reference": "dbfe450bfea42f10a5b9e6f7a0831cbdae495fb4"
+                "reference": "4b8ef7dd9780531fc997fa23a53a38a1f7674bec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kartik-v/yii2-widget-select2/zipball/dbfe450bfea42f10a5b9e6f7a0831cbdae495fb4",
-                "reference": "dbfe450bfea42f10a5b9e6f7a0831cbdae495fb4",
+                "url": "https://api.github.com/repos/kartik-v/yii2-widget-select2/zipball/4b8ef7dd9780531fc997fa23a53a38a1f7674bec",
+                "reference": "4b8ef7dd9780531fc997fa23a53a38a1f7674bec",
                 "shasum": ""
             },
             "require": {
-                "kartik-v/yii2-krajee-base": ">=1.9",
-                "select2/select2": ">=4.0"
+                "kartik-v/yii2-krajee-base": ">=3.0.4",
+                "select2/select2": ">=4.0.0"
             },
             "type": "yii2-extension",
             "extra": {

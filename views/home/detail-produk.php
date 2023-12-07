@@ -7,7 +7,9 @@
 
 use app\components\Angka;
 use app\components\Constant;
+use app\models\ProductDetail;
 use app\models\ProductDetailVariant;
+use app\models\Produk;
 use app\models\ProdukStok;
 use app\models\Toko;
 use Mpdf\Tag\Div;
@@ -27,6 +29,7 @@ $wa_toko = Constant::purifyPhone($toko->no_whatsapp);
 $isi = "Saya tertarik dengan produk ini,apakah stok produk " . $produk->nama . " masih tersedia?";
 $hsl_isi = rawurlencode($isi);
 $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
+$produkbyKategori = Produk::find()->where(['kategori_produk_id' => $produk->kategori_produk_id])->all();
 ?>
 <style>
     .rate {
@@ -715,22 +718,30 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
             </div>
         </div>
         <div class="row">
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="product__item">
-                    <div class="product__item__pic set-bg" data-setbg="img/product/product-1.jpg">
-                        <ul class="product__item__pic__hover">
-                            <li><a href="#"><i class="fa fa-heart"></i></a></li>
-                            <li><a href="#"><i class="fa fa-retweet"></i></a></li>
-                            <li><a href="#"><i class="fa fa-shopping-cart"></i></a></li>
-                        </ul>
-                    </div>
-                    <div class="product__item__text">
-                        <h6><a href="#">Crab Pool Security</a></h6>
-                        <h5>$30.00</h5>
+
+            <?php foreach ($produkbyKategori as $ketpro) {
+                $minimumprice = ProductDetail::find()->where(['id_product' => $ketpro->id])->min('harga');
+                $maximumprice = ProductDetail::find()->where(['id_product' => $ketpro->id])->max('harga');
+            ?>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+
+
+                    <div class="product__item">
+                        <div class="product__item__pic set-bg" data-setbg="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $ketpro->foto_banner ?>">
+                            <ul class="product__item__pic__hover">
+                                <li><a href="#"><i class="fa fa-heart"></i></a></li>
+                                <li><a href="#"><i class="fa fa-retweet"></i></a></li>
+                                <li><a href="#"><i class="fa fa-shopping-cart"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="product__item__text">
+                            <h6><a href="#"><?= $ketpro->nama ?></a></h6>
+                            <h5><?= \app\components\Angka::toReadableHarga($minimumprice); ?> - <?= \app\components\Angka::toReadableHarga($maximumprice); ?></h5>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-lg-3 col-md-4 col-sm-6">
+            <?php } ?>
+            <!-- <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="product__item">
                     <div class="product__item__pic set-bg" data-setbg="img/product/product-2.jpg">
                         <ul class="product__item__pic__hover">
@@ -774,7 +785,7 @@ $url_wa = "https://wa.me/$wa_toko?text=$hsl_isi";
                         <h5>$30.00</h5>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 </section>

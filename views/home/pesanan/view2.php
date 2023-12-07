@@ -11,12 +11,12 @@ use richardfan\widget\JSRegister;
 
 /**
  * @var yii\web\View $this
- * @var app\models\Pesanan $model
+ * @var app\models\DetailPesanan $model
  */
 
 
-$this->title = 'Pesanan ' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Pesanan', 'url' => ['index']];
+$this->title = 'DetailPesanan ' . $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'DetailPesanan', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => (string)$model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'View';
 ?>
@@ -104,7 +104,7 @@ $this->params['breadcrumbs'][] = 'View';
                                     <li style="list-style-type: disc;">Mohon lakukan pembayaran dalam <b>1x24 jam</b></li>
                                     <li style="list-style-type: disc;">Sistem akan otomatis mendeteksi apabila pembayaran sudah masuk</li>
                                     <li style="list-style-type: disc;">Apabila sudah transfer dan status pembayaran belum berubah, mohon konfirmasi pembayaran manual di bawah</li>
-                                    <li style="list-style-type: disc;">Pesanan akan dibatalkan secara otomatis jika Anda tidak melakukan pembayaran.</li>
+                                    <li style="list-style-type: disc;">DetailPesanan akan dibatalkan secara otomatis jika Anda tidak melakukan pembayaran.</li>
                                 </ul>
                             </div>
                         </div>
@@ -151,7 +151,7 @@ $this->params['breadcrumbs'][] = 'View';
 
                 </div>
                 <h4 class="text-primary font-bold p-b-20 m-t-30">
-                    Produk Pesanan
+                    Produk DetailPesanan
                 </h4>
                 <div class="produk p-b-40 m-l-0 m-r-0">
                     <div class="produk-item row m-b-30 m-lr-0">
@@ -245,7 +245,7 @@ $this->params['breadcrumbs'][] = 'View';
         <?= Html::a('<span class="glyphicon glyphicon-plus"></span> ' . 'Tambah Baru', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
     <p class="pull-right">
-        <?= Html::a('<span class="glyphicon glyphicon-list"></span> ' . 'Daftar Pesanan', ['index'], ['class' => 'btn btn-default']) ?>
+        <?= Html::a('<span class="glyphicon glyphicon-list"></span> ' . 'Daftar DetailPesanan', ['index'], ['class' => 'btn btn-default']) ?>
     </p>
 
     <div class="clearfix"></div>
@@ -261,7 +261,7 @@ $this->params['breadcrumbs'][] = 'View';
 
     <div class="box box-info">
         <div class="box-body">
-            <?php $this->beginBlock('app\models\Pesanan'); ?>
+            <?php $this->beginBlock('app\models\DetailPesanan'); ?>
 
             <?= DetailView::widget([
                 'model' => $model,
@@ -298,7 +298,7 @@ $this->params['breadcrumbs'][] = 'View';
                     'encodeLabels' => false,
                     'items' => [[
                         'label'   => '<b class=""># ' . $model->id . '</b>',
-                        'content' => $this->blocks['app\models\Pesanan'],
+                        'content' => $this->blocks['app\models\DetailPesanan'],
                         'active'  => true,
                     ],]
                 ]

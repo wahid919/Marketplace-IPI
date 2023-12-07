@@ -8,54 +8,59 @@ use yii\data\ActiveDataProvider;
 use app\models\Toko;
 
 /**
-* TokoSearch represents the model behind the search form about `app\models\Toko`.
-*/
+ * TokoSearch represents the model behind the search form about `app\models\Toko`.
+ */
 class TokoSearch extends Toko
 {
-/**
-* @inheritdoc
-*/
-public function rules()
-{
-return [
-[['id', 'id_user', 'flag'], 'integer'],
+    /**
+     * @inheritdoc
+     */
+    public function rules()
+    {
+        return [
+            [['id', 'id_user', 'flag'], 'integer'],
             [['nama', 'deskripsi', 'alamat', 'no_whatsapp', 'created_at', 'updated_at'], 'safe'],
-];
-}
+        ];
+    }
 
-/**
-* @inheritdoc
-*/
-public function scenarios()
-{
-// bypass scenarios() implementation in the parent class
-return Model::scenarios();
-}
+    /**
+     * @inheritdoc
+     */
+    public function scenarios()
+    {
+        // bypass scenarios() implementation in the parent class
+        return Model::scenarios();
+    }
 
-/**
-* Creates data provider instance with search query applied
-*
-* @param array $params
-*
-* @return ActiveDataProvider
-*/
-public function search($params)
-{
-$query = Toko::find();
+    /**
+     * Creates data provider instance with search query applied
+     *
+     * @param array $params
+     *
+     * @return ActiveDataProvider
+     */
+    public function search($params)
+    {
+        $user = Yii::$app->user->identity;
+        if ($user->role_id == 1) {
+            $query = Toko::find();
+        } else {
+            $query = Toko::find()->where(['id_user' => $user->id]);
+        }
 
-$dataProvider = new ActiveDataProvider([
-'query' => $query,
-]);
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+        ]);
 
-$this->load($params);
+        $this->load($params);
 
-if (!$this->validate()) {
-// uncomment the following line if you do not want to any records when validation fails
-// $query->where('0=1');
-return $dataProvider;
-}
+        if (!$this->validate()) {
+            // uncomment the following line if you do not want to any records when validation fails
+            // $query->where('0=1');
+            return $dataProvider;
+        }
 
-$query->andFilterWhere([
+        $query->andFilterWhere([
             'id' => $this->id,
             'id_user' => $this->id_user,
             'created_at' => $this->created_at,
@@ -67,7 +72,10 @@ $query->andFilterWhere([
             ->andFilterWhere(['like', 'deskripsi', $this->deskripsi])
             ->andFilterWhere(['like', 'alamat', $this->alamat])
             ->andFilterWhere(['like', 'no_whatsapp', $this->no_whatsapp]);
-
-return $dataProvider;
-}
+        $Toko = $query->all();
+        // var_dump($Toko);
+        // die;
+        $dataProvider->setModels($Toko);
+        return $dataProvider;
+    }
 }

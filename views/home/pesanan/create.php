@@ -3,12 +3,12 @@
 use yii\helpers\Html;
 
 /**
-* @var yii\web\View $this
-* @var app\models\Pesanan $model
-*/
+ * @var yii\web\View $this
+ * @var app\models\DetailPesanan $model
+ */
 
 $this->title = 'Tambah Baru';
-$this->params['breadcrumbs'][] = ['label' => 'Pesanan', 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => 'DetailPesanan', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -17,5 +17,5 @@ $this->params['breadcrumbs'][] = $this->title;
 </p>
 
 <?= $this->render('_form', [
-'model' => $model,
+    'model' => $model,
 ]); ?>

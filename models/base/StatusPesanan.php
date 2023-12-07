@@ -12,7 +12,7 @@ use Yii;
  * @property integer $id
  * @property string $name
  *
- * @property \app\models\Pesanan[] $pesanans
+ * @property \app\models\DetailPesanan[] $pesanans
  * @property string $aliasModel
  */
 abstract class StatusPesanan extends \yii\db\ActiveRecord
@@ -55,10 +55,6 @@ abstract class StatusPesanan extends \yii\db\ActiveRecord
      */
     public function getPesanans()
     {
-        return $this->hasMany(\app\models\Pesanan::className(), ['status_id' => 'id']);
+        return $this->hasMany(\app\models\DetailPesanan::className(), ['status_id' => 'id']);
     }
-
-
-
-
 }

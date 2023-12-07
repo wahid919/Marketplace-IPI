@@ -188,6 +188,7 @@ use app\models\ProductDetailVariant;
                                 <h4>Your Order</h4>
                                 <?php
                                 $tokos = Toko::find()->all();
+                                $totalBerat = 0;
                                 foreach ($tokos as $toko) {
                                     $tokoHasProduk = false; // Menandakan apakah toko memiliki produk dalam keranjang atau tidak
                                     foreach ($keranjang as $ker) {
@@ -204,6 +205,9 @@ use app\models\ProductDetailVariant;
                                                 ->one();
 
                                             $weightone = $weight["berat"] ?? 0;
+                                            // var_dump($weightone);
+                                            // die;
+                                            $totalBerat += $weightone;
                                             // // $output = rtrim($output1, '0');
                                             // $output = number_format($output1, 1) . ' gram';
                                             if (!$tokoHasProduk) { // Tampilkan informasi toko hanya jika toko memiliki produk dalam keranjang dan belum ditampilkan sebelumnya
@@ -229,7 +233,7 @@ use app\models\ProductDetailVariant;
                                                 <li style="line-height: 0px;font-size: 12px;">Warna: <?= $ker->variant1 ?>, Ukuran: <?= $ker->variant2 ?></li>
                                             </ul>
                                             <ul>
-                                                <li style="line-height: 0px;font-size: 12px; padding-top: 1%">Berat: <?= $weightone ?></li>
+                                                <li class="produk__berat" style="line-height: 0px;font-size: 12px; padding-top: 1%">Berat: <?= $weightone ?></li>
                                             </ul>
                                         <?php
                                         }
@@ -246,7 +250,7 @@ use app\models\ProductDetailVariant;
                                             <div class="col-lg-6">
                                                 <div class="checkout__input">
                                                     <p>Ekspedisi<span>*</span></p>
-                                                    <select class="form-control ekspedisi" data-toko="<?= $toko->idkec ?>" style="font-size: 16px;color: #b2b2b2;">
+                                                    <select class="form-control ekspedisi" data-toko="<?= $toko->idkec ?>" data-berat="<?= $totalBerat ?>" data-toko-id="<?= $toko->id ?>" style="font-size: 16px;color: #b2b2b2;">
                                                         <option value="">--Pilih Ekspedisi--</option>
                                                         <option value="jne" tokokec="<?= $toko->idkec ?>">JNE</option>
                                                         <option value="pos" tokokec="<?= $toko->idkec ?>">POS Indonesia</option>
@@ -257,15 +261,15 @@ use app\models\ProductDetailVariant;
                                             <div class="col-lg-6">
                                                 <div class="checkout__input">
                                                     <p>Paket<span>*</span></p>
-                                                    <select class="form-control paket" id="paket" style="font-size: 16px;color: #b2b2b2;">
+                                                    <select class="form-control paket" data-toko-id="<?= $toko->id ?>" id="paket" style="font-size: 16px;color: #b2b2b2;">
                                                         <option value="">Ekspedisi !!!</option>
                                                     </select>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="checkout__order__subtotal">
+                                        <!-- <div class="checkout__order__subtotal">
                                             Subtotal <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span>
-                                        </div>
+                                        </div> -->
                                 <?php
                                     }
                                 }
@@ -285,6 +289,10 @@ use app\models\ProductDetailVariant;
                                         <p>Harga<span style="text-align: right;">*</span></p>
                                         <input name="har" type="text" value="<?= $total ?>">
                                     </div>
+                                    <div class="checkout__order__total" value="<?= $totalharga ?>">
+                                        <input name="tot" type="text" value="<?= $totalharga ?>">
+                                        <!-- Total <span><?= \app\components\Angka::toReadableHarga($totalharga); ?></span> -->
+                                    </div>
                                 </div>
                                 <button type="button" class="site-btn btn-program" id="bayarkan">PAY ORDER</button>
                             </div>
@@ -302,7 +310,8 @@ use app\models\ProductDetailVariant;
 </script>
 
 <script>
-    console.log('bbbb');
+    var pilihankurir = {};
+
     $(document).ready(function() {
         // query and ajax sleect provinsi
         console.log('aaaa');
@@ -383,16 +392,44 @@ use app\models\ProductDetailVariant;
 
     // query and ajax get paket
     $(document).ready(function() {
+        var totalBerat = 0; // Initialize totalBerat as 0
+        const tokoId = $(this).attr('data-toko-id')
         $('.checkout__order__tokoi').each(function() {
             var tokoContainer = $(this);
             var ekspedisiSelect = tokoContainer.find('.ekspedisi');
             var paketSelect = tokoContainer.find('.paket');
+            var totalBayarContainer = $('.checkout__order__total');
+            var totalBayar = parseInt(totalBayarContainer.attr('value')); // Total harga awal dari semua toko
+
+            var tokoBerat = 0; // Initialize tokoBerat as 0 for each store
+
+            // Calculate totalBerat by summing up tokoBerat for each store
+            $('.produk__berat').each(function() {
+                var beratText = $(this).text().replace('Berat: ', ''); // Menghapus teks "Berat: " dari nilai teks
+                var berat = parseFloat(beratText);
+                if (!isNaN(berat)) {
+                    tokoBerat += berat;
+                    // totalBerat += berat;
+                }
+            });
+
+            console.log(totalBerat);
 
             ekspedisiSelect.change(function() {
+
                 var selectedOption = $(this).find('option:selected');
                 var ekspedisi = selectedOption.val();
                 var tokoKecamatan = $(this).data('toko');
                 var kecamatanPembeli = $('#idalamat option:selected').attr('distrik');
+
+                const tokoId = $(this).attr('data-toko-id')
+                pilihankurir[tokoId] = {
+                    'ekspedisi': ekspedisi
+                };
+
+                console.log(pilihankurir);
+                // console.log(totalBerat);
+
 
                 $.ajax({
                     url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-paket" ?>',
@@ -401,7 +438,7 @@ use app\models\ProductDetailVariant;
                         tokoKecamatan: tokoKecamatan,
                         kecamatanPembeli: kecamatanPembeli,
                         ekspedisi: ekspedisi,
-                        berat: 1000
+                        berat: parseInt(tokoBerat)
                     },
                     success: function(response) {
                         var options = '<option value="">Pilih Paket</option>';
@@ -412,19 +449,58 @@ use app\models\ProductDetailVariant;
                             var value = response[i].value;
                             var etd = response[i].etd;
 
-                            options += '<option value="' + service + '">' + service + ' - Rp.' + value + ' - ' + etd + ' Hari</option>';
+                            options += '<option value="' + value + '">' + service + ' - Rp.' + value + ' - ' + etd + ' Hari</option>';
                         }
 
                         paketSelect.html(options);
                         paketSelect.niceSelect('update');
+
+                        // Hitung totalBayar ulang dari semua toko
+                        var totalBayarUpdated = 0;
+                        $('.paket option:selected').each(function() {
+                            var hargaPaket = parseInt($(this).attr('value'));
+                            totalBayarUpdated += hargaPaket;
+                        });
+
+                        // Update totalBayar dengan totalBayarUpdated
+                        totalBayar = totalBayarUpdated;
+                        totalBayarContainer.attr('value', totalBayar);
+                        $('.checkout__order__total span').text(totalBayar);
                     },
                     error: function(xhr, status, error) {
                         console.log(error);
                     }
                 });
             });
+
+            paketSelect.change(function() {
+                const tokoId = $(this).attr('data-toko-id')
+                pilihankurir[tokoId]['harga_paket'] = $(this).val();
+                // pilihankurir[tokoId]['service'] = $(this).val('service');
+                console.log(pilihankurir);
+
+                var totalBayarUpdated = 0;
+                $('.paket option:selected').each(function() {
+                    var hargaPaket = parseInt($(this).attr('value'));
+                    totalBayarUpdated += hargaPaket;
+                });
+                var totalbayarawal = $('input[name=tot]').val();
+
+                totalBayar = totalBayarUpdated + parseInt(totalbayarawal);
+                totalBayarContainer.attr('value', totalBayar);
+                $('.checkout__order__total span').text(toReadableHarga(totalBayar));
+            });
         });
     });
+
+    function toReadableHarga(value) {
+        return value.toLocaleString('id-ID', {
+            style: 'currency',
+            currency: 'IDR'
+        });
+    }
+
+
 
 
     // function onChangeDropdown() {
@@ -450,36 +526,132 @@ use app\models\ProductDetailVariant;
     //         }
     //     });
     // }
-
     document.querySelector("#bayarkan").addEventListener("click", () => {
-        console.log('haloooooooo')
-        var totalbayar = $('input[name=har]').val();
+        // var totalbayar = 0;
+        var totalbayar = $('.checkout__order__total').attr('value');
+        console.log(totalbayar);
         var tujuan = $('option:selected', '#idalamat').attr('distrik');
         var alamatpembeli = $('option:selected', '#idalamat').attr('lengkap');
         var kodepospembeli = $('option:selected', '#idalamat').attr('postcode');
         var berat = 5000;
-        // var ongkir = $('option:selected', '#paket').attr('ongkir');
-        // var kurir = $('option:selected', '#ekspedisii').val();
-        var paket = $('option:selected', '#paket').attr('paket');
-        var ongkir = 50000;
-        var kurir = 'jne';
-        // var paket = 'reg';
+        var paket = 'oke';
 
-        // console.log(alamatpembeli);
-        console.log(kodepospembeli);
 
-        window.location.href =
-            `<?= Url::to(['/home/pembayaran']) ?>?totalbayar=${totalbayar}&tujuan=${tujuan}&kodepospembeli=${kodepospembeli}&berat=${berat}&ongkir=${ongkir}&kurir=${kurir}&paket=${paket}&alamatpembeli=${alamatpembeli}`;
-
+        console.log(pilihankurir);
+        <?php if (Yii::$app->user->identity->id == !null) { ?>
+            if (!(tujuan == null)) {
+                if (!(pilihankurir == null)) {
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= Yii::$app->request->baseUrl . "/home/pembayaran" ?>',
+                        data: {
+                            'totalbayar': totalbayar,
+                            'tujuan': tujuan,
+                            'kurir': pilihankurir,
+                            'alamatpembeli': alamatpembeli,
+                            'kodepospembeli': kodepospembeli,
+                            'berat': berat,
+                            'paket': paket,
+                        },
+                        success: function(response) {
+                            // Redirect to pesanan page
+                            window.location.href = `<?= Url::to(['home/pesanan']) ?>`;
+                        }
+                    })
+                } else {
+                    swal.fire({
+                        title: "Ongkir Tidak terdeteksi !",
+                        text: "Pilih Ongkir Terlebih Dahulu.",
+                        icon: "error",
+                        showDenyButton: false,
+                        confirmButtonText: "Oke",
+                        denyButtonText: "Batal"
+                    })
+                }
+            } else {
+                swal.fire({
+                    title: "Alamat Belum Dipilih !",
+                    text: "Silahkan Pilih Alamat Penerima Terlebih dahulu.",
+                    icon: "warning",
+                    showDenyButton: false,
+                    confirmButtonText: "Oke",
+                    denyButtonText: "Batal"
+                })
+            }
+        <?php } else { ?>
+            $.ajax({
+                success: (response) => {
+                    alert("Silahkan Login Terlebih dahulu");
+                    window.location = "<?= Yii::$app->request->baseUrl . "/home/login" ?>";
+                }
+            })
+        <?php } ?>
         // $.ajax({
-        //     url: '<?= Url::to(['home/pembayaran']) ?>',
+        //     method: 'post',
+        //     url: '<?= Yii::$app->request->baseUrl . "/home/pembayaran" ?>',
         //     data: {
+        //         'totalbayar': totalbayar,
+        //         'tujuan': tujuan,
+        //         'kurir': pilihankurir,
+        //         'alamatpembeli': alamatpembeli,
+        //         'kodepospembeli': kodepospembeli,
+        //         'berat': berat,
+        //         'paket': paket,
         //     },
-        //     success: (response) => {
-        //         if (response.success) {
-        //             window.open(response.url)
-        //         }
+        //     success: function(response) {
+        //         // Redirect to pesanan page
+        //         window.location.href = `<?= Url::to(['home/pesanan']) ?>`;
         //     }
         // })
+
+        // window.location.href = `<?= Url::to(['pesanan']) ?>`;
     });
+
+
+
+    // document.querySelector("#bayarkan").addEventListener("click", () => {
+    //     console.log('haloooooooo')
+    //     var totalbayar = $('input[name=har]').val();
+    //     var tujuan = $('option:selected', '#idalamat').attr('distrik');
+    //     var alamatpembeli = $('option:selected', '#idalamat').attr('lengkap');
+    //     var kodepospembeli = $('option:selected', '#idalamat').attr('postcode');
+    //     var berat = 5000;
+    //     // var ongkir = $('option:selected', '#paket').attr('ongkir');
+    //     // var kurir = $('option:selected', '#ekspedisii').val();
+    //     var paket = $('option:selected', '#paket').attr('paket');
+    //     var ongkir = 50000;
+    //     var kurir = 'jne';
+    //     // var paket = 'reg';
+    //     $('.checkout__order__products').each(function() {
+    //         var subtotal = $(this).next('ul').find('span').text();
+    //         subtotal = parseFloat(subtotal.replace(/[^0-9.-]+/g, '')); // Mengambil nilai angka dari subtotal dengan menghapus karakter non-numerik
+    //         totalbayar += subtotal; // Menambahkan subtotal ke totalbayar
+    //     });
+
+    //     var selectedPaket = $('option:selected', '#paket');
+    //     if (selectedPaket.length) {
+    //         ongkir = parseInt(selectedPaket.attr('ongkir')); // Mendapatkan nilai ongkir dari atribut ongkir pada opsi paket terpilih
+    //         kurir = selectedPaket.attr('kurir');
+    //         paket = selectedPaket.val();
+    //     }
+
+    //     var total = totalbayar + ongkir;
+
+    //     // console.log(alamatpembeli);
+    //     console.log(kodepospembeli);
+
+    //     window.location.href =
+    //         `<?= Url::to(['/home/pembayaran']) ?>?total=${total}&tujuan=${tujuan}&kodepospembeli=${kodepospembeli}&berat=${berat}&ongkir=${ongkir}&kurir=${kurir}&paket=${paket}&alamatpembeli=${alamatpembeli}`;
+
+    //     // $.ajax({
+    //     //     url: '<?= Url::to(['home/pembayaran']) ?>',
+    //     //     data: {
+    //     //     },
+    //     //     success: (response) => {
+    //     //         if (response.success) {
+    //     //             window.open(response.url)
+    //     //         }
+    //     //     }
+    //     // })
+    // });
 </script>

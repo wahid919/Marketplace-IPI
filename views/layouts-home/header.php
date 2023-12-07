@@ -165,7 +165,7 @@ if (function_exists("checkCurrentNav") == false) {
                     <div class="header__top__left">
                         <ul>
                             <li><i class="fa fa-user"></i> <?= Yii::$app->user->identity->name ?></li>
-                            <li>Gratis Ongkir untuk Pesanan diatas <?= \app\components\Angka::toReadableHarga(99999); ?></li>
+                            <li>Gratis Ongkir untuk DetailPesanan diatas <?= \app\components\Angka::toReadableHarga(99999); ?></li>
                         </ul>
                     </div>
                 </div>
@@ -245,6 +245,9 @@ if (function_exists("checkCurrentNav") == false) {
                         <li>
                             <a href="<?= Yii::$app->request->baseUrl . "/home/about" ?>" class="nav__item-link <?= checkCurrentNav('/home/about', true) ?>">About</a>
                         </li>
+                        <!-- <li>
+                            <a href="<?= Yii::$app->request->baseUrl . "/home/member" ?>" class="nav__item-link <?= checkCurrentNav('/home/member', true) ?>">Member</a>
+                        </li> -->
                         <li>
                             <a href="<?= Yii::$app->request->baseUrl . "/home/kontak" ?>" class="nav__item-link <?= checkCurrentNav('/home/kontak', true) ?>">Contact</a>
                         </li>

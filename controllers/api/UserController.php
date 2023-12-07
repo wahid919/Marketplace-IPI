@@ -6,26 +6,15 @@ namespace app\controllers\api;
  * This is the class for REST controller "UserController".
  */
 
+use app\components\SSOToken;
 use app\components\UploadFile;
-use app\traits\UploadFileTrait;
-
-use app\traits\MessageTrait;
-
-use app\models\LoginForm;
-
-use yii\web\Response;
-
-use yii\base\Security;
-use app\models\User;
 use app\models\Otp;
-use app\models\MarketingDataUser;
+use app\models\User;
 use Dompdf\Exception;
 use Yii;
-use yii\web\UploadedFile;
-use app\components\Constant;
-use app\components\SSOToken;
-use yii\helpers\Console;
 use yii\web\HttpException;
+use yii\web\Response;
+use yii\web\UploadedFile;
 
 
 class UserController extends \yii\rest\ActiveController
@@ -78,7 +67,7 @@ class UserController extends \yii\rest\ActiveController
             ],
             'authentication' => [
                 'class' => \app\components\CustomAuth::class,
-                'except' => ['login', 'register', 'forgot-password'],
+                'only' => ['register', 'forgot-password'],
                 // 'header' => 'Authorization',
                 // 'pattern' => '/Bearer {secret_token}/',
             ]
@@ -257,88 +246,19 @@ class UserController extends \yii\rest\ActiveController
     //     }
     // }
 
-    // public function actionLogin()
-    // {
-    //     $model = new LoginForm();
-
-    //     if ($model->load(Yii::$app->request->post()) && $model->login()) {
-    //         return [
-    //             'status' => 'success',
-    //             'data' => [
-    //                 'secret_token' => Yii::$app->user->identity->getAuthKey(),
-    //                 'username' => Yii::$app->user->identity->username,
-    //             ],
-    //         ];
-    //     }
-
-    //     Yii::$app->response->statusCode = 401;
-    //     return [
-    //         'status' => 'error',
-    //         'message' => 'Invalid username or password.',
-    //     ];
-    // }
-
 
     public function actionLogin()
     {
-        // Yii::$app->response->format = Response::FORMAT_JSON;
-        // $username = Yii::$app->request->post('username');
-        // $password = Yii::$app->request->post('password');
-        // // $username = 'wahid@admin.com';
-        // // $password = 'wahid112';
-        // // $username = $_POST['username'];
-        // // $password = $_POST['password'];
-        // // var_dump($username);
-        // // var_dump($password);
-        // // die;
-        // // $user = User::findOne(['username' => $username, 'password' => $password]);
-        // $user = User::findByUsername([
-        //     "username" => Yii::$app->request->post('username'),
-        //     // "password" => $this->validatePassword(Yii::$app->request->post('password')),
-        //     // "username" => $username,
-        //     // "password" => $this->validatePassword($user->password,$_POST['password']),
-        // ]);
-
-        // if ($user !== null) {
-        //     $generate_random_string = SSOToken::generateToken();
-        //     $user->secret_token = $generate_random_string;
-        //     $user->save();
-
-        //     $result['success'] = true;
-        //     $result['message'] = "success login";
-        //     unset($user->password); // remove password from response
-        //     $result["data"] = $user;
-        //     return $result;
-        // } else {
-        //     // throw new \yii\web\HttpException(401, 'Invalid username or password');
-        //     $result = [
-        //         'status' => 'error',
-        //         'message' => 'Email & password tidak boleh kosong!',
-        //         'data' => ["username" => $username, "password" => $password],
-        //     ];
-        //     return $result;
-        // }
-
-
-
-        // $username = $_POST['username'];
-        // $password = $_POST['password'];
         $username = Yii::$app->request->post('username');
         $password = Yii::$app->request->post('password');
 
         Yii::$app->response->format = Response::FORMAT_JSON;
         $params = Yii::$app->request->post();
 
-        // $username = !empty($_POST['username']) ? $_POST['username'] : '';
-        // $password = !empty($_POST['password']) ? $_POST['password'] : '';
-        // $username = !empty(Yii::$app->request->post('username')) ? Yii::$app->request->post('username') : '';
-        // $password = !empty(Yii::$app->request->post('password')) ? Yii::$app->request->post('password') : '';
         $result = [];
 
         // validasi jika kosong
         if (empty($username) || empty($password)) {
-            // throw new \yii\web\HttpException(401, 'Invalid username or password');
-            // Yii::$app->response->format = Response::FORMAT_JSON;
             Yii::$app->response->statusCode = 401;
             $result = [
                 'status' => 'error',
@@ -348,16 +268,9 @@ class UserController extends \yii\rest\ActiveController
         } else {
             try {
                 $user = User::findByUsername([
-                    // "username" => Yii::$app->request->post('username'),
                     'username' => $username,
-                    // "username" => $params['username'],
-                    // "password" => $this->validatePassword(Yii::$app->request->post('password')),
-                    // "username" => $username,
-                    // "password" => $this->validatePassword($user->password,$_POST['password']),
                 ]);
                 if (isset($user)) {
-                    // if (\Yii::$app->security->validatePassword($params['password'], $user->password) == false)
-                    //     throw new HttpException(400, Yii::t("action_message", "Password Salah"));
                     if ($user->validatePassword($password)) {
 
                         if ($user->confirm == 0 && $user->status == 0) {

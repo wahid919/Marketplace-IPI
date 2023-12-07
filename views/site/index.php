@@ -4,12 +4,14 @@ $this->title = 'Dashboard';
 
 use dosamigos\highcharts\HighCharts;
 use app\components\Tanggal;
+use app\models\Toko;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\bootstrap\ActiveForm;
 use yii\web\JsExpression;
 use yii\web\View;
 
+use function Matrix\identity;
 
 // Calculate dates
 $sebulan = date("Ymd", strtotime("-30 day", strtotime(date("Y-m-d"))));
@@ -23,21 +25,27 @@ $lalu = date("Y") . "-" . $lalu . "-";
 $trxToday = 0;
 $trxKemarin = 0;
 $trxTotal = 0;
+$toko = Toko::find()->where(['id_user' => Yii::$app->user->identity->id])->one();
 
-$transactions = \app\models\Pesanan::find()
+$transactions = \app\models\DetailPesanan::find()
   ->where(['>=', 'created_at', $lalu . "1"])
   ->andWhere(['>=', 'status_id', 3])
+  ->andWhere(['>=', 'toko_id', $toko->id])
   ->all();
 
 foreach ($transactions as $transaction) {
-  if ($transaction->created_at == $today) {
+  $date = substr($transaction->created_at, 0, 10);
+  if ($date == $today) {
     $trxToday += 1;
-  } elseif ($transaction->created_at == $kemarin) {
+  } elseif ($date == $kemarin) {
     $trxKemarin += 1;
   }
 
   $trxTotal += 1;
 }
+
+// var_dump($trxToday);
+// die;
 
 // Get sales data
 $salesToday = 0;
@@ -50,9 +58,10 @@ foreach ($transactions as $transaction) {
     ->all();
 
   foreach ($sales as $sale) {
-    if ($transaction->created_at == $today) {
+    $date = substr($transaction->created_at, 0, 10);
+    if ($date == $today) {
       $salesToday += $sale->jumlah;
-    } elseif ($transaction->created_at == $kemarin) {
+    } elseif ($date == $kemarin) {
       $salesKemarin += $sale->jumlah;
     }
 
@@ -65,19 +74,22 @@ $revenueToday = 0;
 $revenueKemarin = 0;
 $revenueTotal = 0;
 
-$pembayaranToday = \app\models\Pesanan::find()
+$pembayaranToday = \app\models\DetailPesanan::find()
   ->where(['DATE(created_at)' => $today])
   ->andWhere(['>=', 'status_id', 2])
+  ->andWhere(['>=', 'toko_id', $toko->id])
   ->all();
 
-$pembayaranKemarin = \app\models\Pesanan::find()
+$pembayaranKemarin = \app\models\DetailPesanan::find()
   ->where(['DATE(created_at)' => $kemarin])
   ->andWhere(['>=', 'status_id', 2])
+  ->andWhere(['>=', 'toko_id', $toko->id])
   ->all();
 
-$pembayaranTotal = \app\models\Pesanan::find()
+$pembayaranTotal = \app\models\DetailPesanan::find()
   ->where(['>=', 'created_at', $lalu . "2"])
   ->andWhere(['>=', 'status_id', 2])
+  ->andWhere(['>=', 'toko_id', $toko->id])
   ->all();
 
 foreach ($pembayaranToday as $pembayaran) {
@@ -103,12 +115,12 @@ for ($i = 0; $i < 20; $i++) {
 }
 
 for ($i = 0; $i < count($graphtgl); $i++) {
-  $transaksi = \app\models\Pesanan::find()
+  $transaksi = \app\models\DetailPesanan::find()
     ->where(['created_at' => date("Y-m-d", strtotime($graphtgl[$i]))])
     ->andWhere(['>=', 'status_id', 2])
     ->count();
 
-  $penjualan = \app\models\Pesanan::find()
+  $penjualan = \app\models\DetailPesanan::find()
     ->where(['created_at' => date("Y-m-d", strtotime($graphtgl[$i]))])
     ->count();
 

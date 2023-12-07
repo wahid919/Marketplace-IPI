@@ -4,21 +4,21 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 use app\models\Produk;
 use yii\grid\GridView;
-use app\models\Pesanan;
+use app\models\DetailPesanan;
 use yii\data\Pagination;
 use app\models\Keranjang;
-
-
+use app\models\Pesanan;
+use app\models\Toko;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
  * @var app\models\search\PesananSearch $searchModel
  * * @var yii\web\View $this
- * @var app\models\Pesanan $model
+ * @var app\models\DetailPesanan $model
  */
 
-$this->title = 'Pesanan';
+$this->title = 'DetailPesanan';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -168,15 +168,26 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- BELUM BAYAR -->
                 <div class="tab-pane active" id="belumbayar" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 3]);
+                    $query = Pesanan::find()
+                        ->alias('p')
+                        ->innerJoinWith(['detail_pesanan dp' => function ($query) {
+                            $query->where(['dp.status_id' => 3]);
+                        }])
+                        ->where(['p.user_id' => Yii::$app->user->identity->id]);
+
                     $count = $query->count();
+
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
-                        ->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 3])
                         ->limit($pagination->limit)
-                        ->orderBy(['id' => SORT_DESC])
+                        ->orderBy(['p.id' => SORT_DESC])
                         ->all();
-                    if ($belumbayar == !null) {
+
+                    // echo "<pre>";
+                    // var_dump($query);
+                    // die;
+
+                    if (!empty($belumbayar)) {
                     ?>
                         <div class="pesanan">
                             <?php
@@ -199,57 +210,74 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                         </div>
                                         <div class="row m-lr-0">
-                                            <div class="col-md-8 p-lr-0 m-b-10">
+                                            <div class="row col-md-8">
                                                 <?php
-                                                // $this->db->where("idbayar", $res->id);
-                                                // $trx = $this->db->get("transaksi");
-                                                $trx = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $res->id])->all();
-                                                $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $res->id])->sum('harga*jumlah');
-                                                $no = 1;
-                                                foreach ($trx as $rx) {
-                                                    $trp = Produk::find()->where(['id' => $rx->produk_id])->all();
-                                                    foreach ($trp as $key) {
-                                                        if ($no == 2) {
+                                                $detailpesanan = DetailPesanan::find()->where(['pesanan_id' => $res->id, 'status_id' => 3])->all();
+                                                foreach ($detailpesanan as $detail) {
+                                                    $tokoname = Toko::find()->where(['id' => $detail->toko_id])->one();
                                                 ?>
+                                                    <div class="col-8 nama_toko">
+                                                        <span class="text-dark font-small fs-8" style="text-transform: uppercase; ">
+                                                            &nbsp;<span style="font-weight:600; color: #6f6f6f;"><?php echo $tokoname->nama; ?></span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="col-md-12 p-lr-0 m-b-10">
+                                                        <?php
+                                                        // $this->db->where("idbayar", $res->id);
+                                                        // $trx = $this->db->get("transaksi");
+                                                        $trx = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detail->id])->all();
+                                                        $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detail->id])->sum('harga*jumlah');
+                                                        $no = 1;
+                                                        foreach ($trx as $rx) {
+                                                            $trp = Produk::find()->where(['id' => $rx->produk_id])->all();
+                                                            foreach ($trp as $key) {
+                                                                if ($no == 2) {
+                                                        ?>
 
-                                                            <div class="m-b-30 show-product">
-                                                            <?php
+                                                                    <div class="m-b-30 show-product">
+                                                                    <?php
 
+                                                                }
+                                                                    ?>
+                                                                    <div class="row p-b-30 m-lr-0 produk-item">
+                                                                        <div class="col-4 col-md-2">
+                                                                            <img class="img-item" src="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>" alt="">
+                                                                        </div>
+                                                                        <div class="col-8 col-md-10">
+                                                                            <p class="font-medium text-dark btn-block"><?php if ($trp != null) { ?>
+                                                                                    <?= $key->nama ?>
+                                                                                <?php } else { ?>
+                                                                                    Produk Dihapus
+                                                                                <?php } ?></p>
+                                                                            <small class="text-primary">Warna: <?= $rx->variant1 ?> Ukuran: <?= $rx->variant2 ?></small>
+                                                                            <p><?= \app\components\Angka::toReadableHarga($rx->harga);  ?> <span style="font-size:11px">x<?= $rx->jumlah; ?></span></p>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php
+
+                                                                $no++;
+                                                            }
                                                         }
-                                                            ?>
-                                                            <div class="row p-b-30 m-lr-0 produk-item">
-                                                                <div class="col-4 col-md-2">
-                                                                    <img class="img-item" src="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>" alt="">
-                                                                </div>
-                                                                <div class="col-8 col-md-10">
-                                                                    <p class="font-medium text-dark btn-block"><?php if ($trp != null) { ?>
-                                                                            <?= $key->nama ?>
-                                                                        <?php } else { ?>
-                                                                            Produk Dihapus
-                                                                        <?php } ?></p>
-                                                                    <small class="text-primary">Warna: <?= $rx->variant1 ?> Ukuran: <?= $rx->variant2 ?></small>
-                                                                    <p><?= \app\components\Angka::toReadableHarga($rx->harga);  ?> <span style="font-size:11px">x<?= $rx->jumlah; ?></span></p>
-                                                                </div>
-                                                            </div>
-                                                        <?php
-
-                                                        $no++;
-                                                    }
-                                                }
-                                                if ($no > 2) {
-                                                        ?>
-                                                            </div>
-                                                            <div class="p-b-30 p-r-10">
-                                                                <a href="javascript:void(0)" class="view-product text-info"><i class="fa fa-chevron-circle-down"></i> Lihat produk lainnya</a>
-                                                                <a href="javascript:void(0)" class="view-product text-info" style="display:none;"><i class='fa fa-chevron-circle-up'></i> Sembunyikan produk</a>
-                                                            </div>
-                                                        <?php
-                                                    }
-                                                        ?>
+                                                        if ($no > 2) {
+                                                                ?>
+                                                                    </div>
+                                                                    <div class="p-b-30 p-r-10">
+                                                                        <a href="javascript:void(0)" class="view-product text-info"><i class="fa fa-chevron-circle-down"></i> Lihat produk lainnya</a>
+                                                                        <a href="javascript:void(0)" class="view-product text-info" style="display:none;"><i class='fa fa-chevron-circle-up'></i> Sembunyikan produk</a>
+                                                                    </div>
+                                                                <?php
+                                                            }
+                                                                ?>
+                                                    </div>
+                                                    <div class="row m-lr-0 p-lr-12 pt-4 col-md-12">
+                                                        <!-- <div class="text-black fs-18 p-lr-0 col-6 col-md-12">SubTotal<span class="hidesmall">Bayar</span></div> -->
+                                                        <div class="text-danger fs-20 p-lr-0 col-6 col-md-12 font-bold"><?= \app\components\Angka::toReadableHarga($totalharga + $detail->ongkir) ?></div>
+                                                    </div>
+                                                <?php } ?>
                                             </div>
-                                            <div class="row m-lr-0 p-lr-12 col-md-4">
+                                            <div class="row col-md-4">
                                                 <div class="text-black fs-18 p-lr-0 col-6 col-md-12">Total<span class="hidesmall"> Pembayaran</span></div>
-                                                <div class="text-danger fs-20 p-lr-0 col-6 col-md-12 font-bold"><?= \app\components\Angka::toReadableHarga($totalharga) ?></div>
+                                                <div class="text-danger fs-20 p-lr-0 col-6 col-md-12 font-bold"><?= \app\components\Angka::toReadableHarga($res->nominal) ?></div>
                                             </div>
                                         </div>
                                         <hr>
@@ -264,7 +292,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                                         <a href="view-pesanan/<?= $res->id ?>" onclick="<?= $klik ?>" class="btn btn-success btn-block m-b-10">
                                                             Bayar Pesanan
                                                         </a>
-                                                        <!-- <button id="pay-button-<?= $res->id ?>" class="btn btn-success btn-block m-b-10 btn-program <?= $status ?>"> Bayar Pesanan</button> -->
+                                                        <!-- <button id="pay-button-<?= $res->id ?>" class="btn btn-success btn-block m-b-10 btn-program <?= $status ?>"> Bayar DetailPesanan</button> -->
                                                     </div>
                                                     <div class="col-md-6">
                                                         <a href="javascript:void(0)" onclick="konfirmasi(<?php echo $res->id; ?>)" class="btn btn-warning btn-block m-b-10">
@@ -329,14 +357,29 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- DIKEMAS -->
                 <div class="tab-pane" id="dikemas" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 2]);
+                    // $query = Pesanan::find()->where(['user_id' => Yii::$app->user->identity->id]);
+                    // $count = $query->count();
+                    // $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
+                    // $belumbayar = $query->offset($pagination->offset)
+                    //     ->where(['user_id' => Yii::$app->user->identity->id])
+                    //     ->limit($pagination->limit)
+                    //     ->orderBy(['id' => SORT_DESC])
+                    //     ->all();
+                    $query = Pesanan::find()
+                        ->alias('p')
+                        ->innerJoinWith(['detail_pesanan dp' => function ($query) {
+                            $query->where(['dp.status_id' => 2]);
+                        }])
+                        ->where(['p.user_id' => Yii::$app->user->identity->id]);
+
                     $count = $query->count();
+
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
-                        ->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 2])
                         ->limit($pagination->limit)
-                        ->orderBy(['id' => SORT_DESC])
+                        ->orderBy(['p.id' => SORT_DESC])
                         ->all();
+
                     if ($belumbayar == !null) {
                     ?>
                         <div class="pesanan">
@@ -349,7 +392,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                         <div class="row p-b-30">
                                             <div class="col-8">
                                                 <span class="text-dark font-medium fs-18">
-                                                    Payment ID&nbsp; <span class="text-success">#<?php echo $res->resi; ?></span>
+                                                    Payment ID&nbsp; <span class="text-success">#<?php echo $res->invoice; ?></span>
                                                 </span>
                                             </div>
                                             <div class="col-4 text-right">
@@ -359,54 +402,73 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                         </div>
                                         <div class="row m-lr-0">
-                                            <div class="col-md-8 p-lr-0 m-b-10">
+                                            <div class="row col-md-8">
                                                 <?php
-                                                $trx = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $res->id])->all();
-                                                $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $res->id])->sum('harga*jumlah');
-                                                $no = 1;
-                                                foreach ($trx as $rx) {
-                                                    $trp = Produk::find()->where(['id' => $rx->produk_id])->all();
-                                                    foreach ($trp as $key) {
-                                                        if ($no == 2) {
+                                                $detailpesanan = DetailPesanan::find()->where(['pesanan_id' => $res->id, 'status_id' => 2])->all();
+                                                foreach ($detailpesanan as $detail) {
+                                                    $tokoname = Toko::find()->where(['id' => $detail->toko_id])->one();
                                                 ?>
-                                                            <div class="m-b-30 show-product">
-                                                            <?php
+                                                    <div class="col-8 nama_toko">
+                                                        <span class="text-dark font-small fs-8" style="text-transform: uppercase; ">
+                                                            &nbsp;<span style="font-weight:600; color: #6f6f6f;"><?php echo $tokoname->nama; ?></span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="col-md-12 p-lr-0 m-b-10">
+                                                        <?php
+                                                        // $this->db->where("idbayar", $res->id);
+                                                        // $trx = $this->db->get("transaksi");
+                                                        $trx = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detail->id])->all();
+                                                        $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detail->id])->sum('harga*jumlah');
+                                                        $no = 1;
+                                                        foreach ($trx as $rx) {
+                                                            $trp = Produk::find()->where(['id' => $rx->produk_id])->all();
+                                                            foreach ($trp as $key) {
+                                                                if ($no == 2) {
+                                                        ?>
 
+                                                                    <div class="m-b-30 show-product">
+                                                                    <?php
+
+                                                                }
+                                                                    ?>
+                                                                    <div class="row p-b-30 m-lr-0 produk-item">
+                                                                        <div class="col-4 col-md-2">
+                                                                            <img class="img-item" src="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>" alt="">
+                                                                        </div>
+                                                                        <div class="col-8 col-md-10">
+                                                                            <p class="font-medium text-dark btn-block"><?php if ($trp != null) { ?>
+                                                                                    <?= $key->nama ?>
+                                                                                <?php } else { ?>
+                                                                                    Produk Dihapus
+                                                                                <?php } ?></p>
+                                                                            <small class="text-primary">Warna: <?= $rx->variant1 ?> Ukuran: <?= $rx->variant2 ?></small>
+                                                                            <p><?= \app\components\Angka::toReadableHarga($rx->harga);  ?> <span style="font-size:11px">x<?= $rx->jumlah; ?></span></p>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php
+
+                                                                $no++;
+                                                            }
                                                         }
-                                                            ?>
-                                                            <div class="row p-b-30 m-lr-0 produk-item">
-                                                                <div class="col-4 col-md-2">
-                                                                    <img class="img-item" src="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>" alt="">
-                                                                    <!-- <div class="u" style="background-image: url(<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>);" alt="IMG"></div> -->
-                                                                </div>
-                                                                <div class="col-8 col-md-10">
-                                                                    <p class="font-medium text-dark btn-block"><?php if ($trp != null) { ?>
-                                                                            <?= $key->nama ?>
-                                                                        <?php } else { ?>
-                                                                            Produk Dihapus
-                                                                        <?php } ?></p>
-                                                                    <small class="text-primary">Warna: <?= $rx->variant1 ?> Ukuran: <?= $rx->variant2 ?></small>
-                                                                    <p><?= \app\components\Angka::toReadableHarga($rx->harga);  ?> <span style="font-size:11px">x<?= $rx->jumlah; ?></span></p>
-                                                                </div>
-                                                            </div>
-                                                        <?php
-
-                                                        $no++;
-                                                    }
-                                                }
-                                                if ($no > 2) {
-                                                        ?>
-                                                            </div>
-                                                            <div class="p-b-30 p-r-10">
-                                                                <a href="javascript:void(0)" class="view-product text-info"><i class="fa fa-chevron-circle-down"></i> Lihat produk lainnya</a>
-                                                                <a href="javascript:void(0)" class="view-product text-info" style="display:none;"><i class='fa fa-chevron-circle-up'></i> Sembunyikan produk</a>
-                                                            </div>
-                                                        <?php
-                                                    }
-                                                        ?>
+                                                        if ($no > 2) {
+                                                                ?>
+                                                                    </div>
+                                                                    <div class="p-b-30 p-r-10">
+                                                                        <a href="javascript:void(0)" class="view-product text-info"><i class="fa fa-chevron-circle-down"></i> Lihat produk lainnya</a>
+                                                                        <a href="javascript:void(0)" class="view-product text-info" style="display:none;"><i class='fa fa-chevron-circle-up'></i> Sembunyikan produk</a>
+                                                                    </div>
+                                                                <?php
+                                                            }
+                                                                ?>
+                                                    </div>
+                                                    <div class="row m-lr-0 p-lr-12 pt-4 col-md-12">
+                                                        <!-- <div class="text-black fs-18 p-lr-0 col-6 col-md-12">SubTotal<span class="hidesmall">Bayar</span></div> -->
+                                                        <div class="text-danger fs-20 p-lr-0 col-6 col-md-12 font-bold"><?= \app\components\Angka::toReadableHarga($totalharga + $detail->ongkir) ?></div>
+                                                    </div>
+                                                <?php } ?>
                                             </div>
                                             <div class="col-md-4">
-                                                Waktu Pemesanan:<br /><i class="text-info p-r-8 font-medium"><?= \app\components\Tanggal::toReadableDate($res->selesai); ?> WIB</i>
+                                                Waktu Pemesanan:<br><i class="text-info p-r-8 font-medium"><?= $res->created_at ?></i>
                                             </div>
                                         </div>
                                         <hr>
@@ -417,7 +479,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="m-t-14 showsmall"></div>
-                                                <h5 class="text-dark">Total Order &nbsp;<span class="text-success font-bold text-right"><?= \app\components\Angka::toReadableHarga($totalharga) ?></span></h5>
+                                                <h5 class="text-dark">Total Order &nbsp;<span class="text-success font-bold text-right"><?= \app\components\Angka::toReadableHarga($res->nominal) ?></span></h5>
                                             </div>
                                         </div>
                                     </div>
@@ -457,7 +519,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- DIKIRIM -->
                 <div class="tab-pane" id="dikirim" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 10]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 10]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -482,7 +544,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-4 text-right">
                                                 <a href="javascript:void(0)" onclick="batal(<?php echo $res->id; ?>)" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>Pesanan</span>
+                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>DetailPesanan</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -595,7 +657,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- SELESAI -->
                 <div class="tab-pane" id="selesai" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 11]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 11]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -620,7 +682,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-4 text-right">
                                                 <a href="javascript:void(0)" onclick="batal(<?php echo $res->id; ?>)" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>Pesanan</span>
+                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>DetailPesanan</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -728,27 +790,42 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- BATAL -->
                 <div class="tab-pane" id="dibatalkan" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 5]);
+                    // $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 5]);
+                    // $count = $query->count();
+                    // $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
+                    // $belumbayar = $query->offset($pagination->offset)
+                    //     ->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => [5, 6]])
+                    //     ->limit($pagination->limit)
+                    //     ->orderBy(['id' => SORT_DESC])
+                    //     ->all();
+
+                    $query = Pesanan::find()
+                        ->alias('p')
+                        ->innerJoinWith(['detail_pesanan dp' => function ($query) {
+                            $query->where(['dp.status_id' => 5]);
+                        }])
+                        ->where(['p.user_id' => Yii::$app->user->identity->id]);
+
                     $count = $query->count();
+
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
-                        ->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => [5, 6]])
                         ->limit($pagination->limit)
-                        ->orderBy(['id' => SORT_DESC])
+                        ->orderBy(['p.id' => SORT_DESC])
                         ->all();
+
                     if ($belumbayar == !null) {
                     ?>
                         <div class="pesanan">
                             <?php
                             foreach ($belumbayar as $res) {
                             ?>
-
                                 <div class="m-b-30">
                                     <div class="pesanan-item p-lr-30 p-tb-30 m-lr-0-xl">
                                         <div class="row p-b-30">
                                             <div class="col-8">
                                                 <span class="text-dark font-medium fs-18">
-                                                    Payment ID&nbsp; <span class="text-success">#<?php echo $res->resi; ?></span>
+                                                    Payment ID&nbsp; <span class="text-success">#<?php echo $res->invoice; ?></span>
                                                 </span>
                                             </div>
                                             <div class="col-4 text-right">
@@ -758,65 +835,86 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                         </div>
                                         <div class="row m-lr-0">
-                                            <div class="col-md-8 p-lr-0 m-b-10">
+                                            <div class="row col-md-8">
                                                 <?php
-                                                $trx = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $res->id])->all();
-                                                $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $res->id])->sum('harga*jumlah');
-                                                $no = 1;
-                                                foreach ($trx as $rx) {
-                                                    $trp = Produk::find()->where(['id' => $rx->produk_id])->all();
-                                                    foreach ($trp as $key) {
-                                                        if ($no == 2) {
+                                                $detailpesanan = DetailPesanan::find()->where(['pesanan_id' => $res->id, 'status_id' => 5])->all();
+                                                foreach ($detailpesanan as $detail) {
+                                                    $tokoname = Toko::find()->where(['id' => $detail->toko_id])->one();
                                                 ?>
-                                                            <div class="m-b-30 show-product">
-                                                            <?php
+                                                    <div class="col-8 nama_toko">
+                                                        <span class="text-dark font-small fs-8" style="text-transform: uppercase; ">
+                                                            &nbsp;<span style="font-weight:600; color: #6f6f6f;"><?php echo $tokoname->nama; ?></span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="col-md-12 p-lr-0 m-b-10">
+                                                        <?php
+                                                        // $this->db->where("idbayar", $res->id);
+                                                        // $trx = $this->db->get("transaksi");
+                                                        $trx = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detail->id])->all();
+                                                        $totalharga = Keranjang::find()->where(['user_id' => Yii::$app->user->identity->id, 'id_transaksi' => $detail->id])->sum('harga*jumlah');
+                                                        $no = 1;
+                                                        foreach ($trx as $rx) {
+                                                            $trp = Produk::find()->where(['id' => $rx->produk_id])->all();
+                                                            foreach ($trp as $key) {
+                                                                if ($no == 2) {
+                                                        ?>
 
+                                                                    <div class="m-b-30 show-product">
+                                                                    <?php
+
+                                                                }
+                                                                    ?>
+                                                                    <div class="row p-b-30 m-lr-0 produk-item">
+                                                                        <div class="col-4 col-md-2">
+                                                                            <img class="img-item" src="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>" alt="">
+                                                                        </div>
+                                                                        <div class="col-8 col-md-10">
+                                                                            <p class="font-medium text-dark btn-block"><?php if ($trp != null) { ?>
+                                                                                    <?= $key->nama ?>
+                                                                                <?php } else { ?>
+                                                                                    Produk Dihapus
+                                                                                <?php } ?></p>
+                                                                            <small class="text-primary">Warna: <?= $rx->variant1 ?> Ukuran: <?= $rx->variant2 ?></small>
+                                                                            <p><?= \app\components\Angka::toReadableHarga($rx->harga);  ?> <span style="font-size:11px">x<?= $rx->jumlah; ?></span></p>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php
+
+                                                                $no++;
+                                                            }
                                                         }
-                                                            ?>
-                                                            <div class="row p-b-30 m-lr-0 produk-item">
-                                                                <div class="col-4 col-md-2">
-                                                                    <img class="img-item" src="<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>" alt="">
-                                                                    <!-- <div class="u" style="background-image: url(<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $key->foto_banner ?>);" alt="IMG"></div> -->
-                                                                </div>
-                                                                <div class="col-8 col-md-10">
-                                                                    <p class="font-medium text-dark btn-block"><?php if ($trp != null) { ?>
-                                                                            <?= $key->nama ?>
-                                                                        <?php } else { ?>
-                                                                            Produk Dihapus
-                                                                        <?php } ?></p>
-                                                                    <small class="text-primary">Warna: <?= $rx->variant1 ?> Ukuran: <?= $rx->variant2 ?></small>
-                                                                    <p><?= \app\components\Angka::toReadableHarga($rx->harga);  ?> <span style="font-size:11px">x<?= $rx->jumlah; ?></span></p>
-                                                                </div>
-                                                            </div>
-                                                        <?php
-
-                                                        $no++;
-                                                    }
-                                                }
-                                                if ($no > 2) {
-                                                        ?>
-                                                            </div>
-                                                            <div class="p-b-30 p-r-10">
-                                                                <a href="javascript:void(0)" class="view-product text-info"><i class="fa fa-chevron-circle-down"></i> Lihat produk lainnya</a>
-                                                                <a href="javascript:void(0)" class="view-product text-info" style="display:none;"><i class='fa fa-chevron-circle-up'></i> Sembunyikan produk</a>
-                                                            </div>
-                                                        <?php
-                                                    }
-                                                        ?>
+                                                        if ($no > 2) {
+                                                                ?>
+                                                                    </div>
+                                                                    <div class="p-b-30 p-r-10">
+                                                                        <a href="javascript:void(0)" class="view-product text-info"><i class="fa fa-chevron-circle-down"></i> Lihat produk lainnya</a>
+                                                                        <a href="javascript:void(0)" class="view-product text-info" style="display:none;"><i class='fa fa-chevron-circle-up'></i> Sembunyikan produk</a>
+                                                                    </div>
+                                                                <?php
+                                                            }
+                                                                ?>
+                                                    </div>
+                                                    <div class="row m-lr-0 p-lr-12 pt-4 col-md-12">
+                                                        <!-- <div class="text-black fs-18 p-lr-0 col-6 col-md-12">SubTotal<span class="hidesmall">Bayar</span></div> -->
+                                                        <div class="text-danger fs-20 p-lr-0 col-6 col-md-12 font-bold"><?= \app\components\Angka::toReadableHarga($totalharga + $detail->ongkir) ?></div>
+                                                    </div>
+                                                <?php } ?>
                                             </div>
                                             <div class="col-md-4">
-                                                Waktu Pembatalan:<br /><i class="text-danger p-r-8 font-medium"><?= \app\components\Tanggal::toReadableDate($res->selesai); ?> WIB</i>
+                                                Waktu Pemesanan:<br><i class="text-info p-r-8 font-medium"><?= $res->created_at ?></i>
                                             </div>
                                         </div>
                                         <hr>
                                         <div class="row">
-                                            <div class="col-md-8">
-                                                <b>Alasan Pembatalan:</b><br />
-                                                <span class="text-danger"><?= $res->keterangan; ?></span>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="m-t-14 showsmall"></div>
-                                                <h5 class="text-dark">Total Order &nbsp;<span class="text-success font-bold text-right"><?= \app\components\Angka::toReadableHarga($totalharga) ?></span></h5>
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <b>Alasan Pembatalan:</b><br />
+                                                    <span class="text-danger"><?= $res->detail_pesanan->keterangan; ?></span>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="m-t-14 showsmall"></div>
+                                                    <h5 class="text-dark">Total Order &nbsp;<span class="text-success font-bold text-right"><?= \app\components\Angka::toReadableHarga($totalharga) ?></span></h5>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

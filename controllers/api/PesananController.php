@@ -6,7 +6,7 @@ namespace app\controllers\api;
  * This is the class for REST controller "PesananController".
  */
 
-use app\models\Pesanan;
+use app\models\DetailPesanan;
 use app\models\Keranjang;
 
 use yii\web\Response;
@@ -28,7 +28,7 @@ use yii\helpers\ArrayHelper;
 
 class PesananController extends \yii\rest\ActiveController
 {
-    public $modelClass = 'app\models\Pesanan';
+    public $modelClass = 'app\models\DetailPesanan';
     public $validation  = null;
     public function behaviors()
     {
@@ -79,9 +79,9 @@ class PesananController extends \yii\rest\ActiveController
         // var_dump($stt);
         // die;
         $result = [];
-        $data_all = Pesanan::find()->where(['usrid' => $id])->orderBy(['id' => SORT_DESC])->all();
+        $data_all = DetailPesanan::find()->where(['usrid' => $id])->orderBy(['id' => SORT_DESC])->all();
 
-        $query = Pesanan::find()->where(['usrid' => $id]);
+        $query = DetailPesanan::find()->where(['usrid' => $id]);
         $count = $query->count();
         $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 6]);
         $pesanans = $query->offset($pagination->offset)
@@ -90,7 +90,7 @@ class PesananController extends \yii\rest\ActiveController
             ->orderBy(['id' => SORT_DESC])
             ->all();
         foreach ($data_all as $data) {
-            $wf = Pesanan::find()->where(['id' => $data->id])->one();
+            $wf = DetailPesanan::find()->where(['id' => $data->id])->one();
             // $a = $this->findMidtrans($wf->kode_transaksi);
             $a = $this->findMidtrans($wf->invoice);
             // var_dump($a);

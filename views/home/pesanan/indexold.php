@@ -4,7 +4,7 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 use app\models\Produk;
 use yii\grid\GridView;
-use app\models\Pesanan;
+use app\models\DetailPesanan;
 use yii\data\Pagination;
 use app\models\Keranjang;
 
@@ -15,10 +15,10 @@ use app\models\Keranjang;
  * @var yii\data\ActiveDataProvider $dataProvider
  * @var app\models\search\PesananSearch $searchModel
  * * @var yii\web\View $this
- * @var app\models\Pesanan $model
+ * @var app\models\DetailPesanan $model
  */
 
-$this->title = 'Pesanan';
+$this->title = 'DetailPesanan';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -153,7 +153,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="container">
         <!-- <div class="product__discount"> -->
         <div class="section-title product__discount__title">
-            <h2>Pesanan Saya</h2>
+            <h2>DetailPesanan Saya</h2>
         </div>
         <!-- </div> -->
         <div class="tab">
@@ -168,7 +168,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- BELUM BAYAR -->
                 <div class="tab-pane active" id="belumbayar" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 3]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 3]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -262,9 +262,9 @@ $this->params['breadcrumbs'][] = $this->title;
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <a href="view-pesanan/<?= $res->id ?>" onclick="<?= $klik ?>" class="btn btn-success btn-block m-b-10">
-                                                            Bayar Pesanan
+                                                            Bayar DetailPesanan
                                                         </a>
-                                                        <!-- <button id="pay-button-<?= $res->id ?>" class="btn btn-success btn-block m-b-10 btn-program <?= $status ?>"> Bayar Pesanan</button> -->
+                                                        <!-- <button id="pay-button-<?= $res->id ?>" class="btn btn-success btn-block m-b-10 btn-program <?= $status ?>"> Bayar DetailPesanan</button> -->
                                                     </div>
                                                     <div class="col-md-6">
                                                         <a href="javascript:void(0)" onclick="konfirmasi(<?php echo $res->id; ?>)" class="btn btn-warning btn-block m-b-10">
@@ -329,7 +329,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- DIKEMAS -->
                 <div class="tab-pane" id="dikemas" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 2]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 2]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -354,7 +354,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-4 text-right">
                                                 <a href="javascript:void(0)" onclick="batal(<?php echo $res->id; ?>)" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>Pesanan</span>
+                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>DetailPesanan</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -457,7 +457,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- DIKIRIM -->
                 <div class="tab-pane" id="dikirim" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 11]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 11]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -482,7 +482,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-4 text-right">
                                                 <a href="javascript:void(0)" onclick="batal(<?php echo $res->id; ?>)" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>Pesanan</span>
+                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>DetailPesanan</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -585,7 +585,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- SELESAI -->
                 <div class="tab-pane" id="selesai" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 12]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 12]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -610,7 +610,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-4 text-right">
                                                 <a href="javascript:void(0)" onclick="batal(<?php echo $res->id; ?>)" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>Pesanan</span>
+                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>DetailPesanan</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -713,7 +713,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <!-- BATAL -->
                 <div class="tab-pane" id="dibatalkan" role="tabpanel">
                     <?php
-                    $query = Pesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 5]);
+                    $query = DetailPesanan::find()->where(['usrid' => Yii::$app->user->identity->id, 'status_id' => 5]);
                     $count = $query->count();
                     $pagination = new Pagination(['totalCount' => $count, 'pageSize' => 5]);
                     $belumbayar = $query->offset($pagination->offset)
@@ -738,7 +738,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                             </div>
                                             <div class="col-4 text-right">
                                                 <a href="javascript:void(0)" onclick="batal(<?php echo $res->id; ?>)" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>Pesanan</span>
+                                                    <i class="fa fa-angle-double-right"></i> Rincian<span class='hidesmall'>DetailPesanan</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -1110,7 +1110,7 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
 </div>
 <div class="pesanan" style="padding-left: 13%; padding-right:13%">
-    <h3 class="text-ipi-1 font-weight-bold text-detail-program" style="padding-bottom: 3%;">Pesanan</h3>
+    <h3 class="text-ipi-1 font-weight-bold text-detail-program" style="padding-bottom: 3%;">DetailPesanan</h3>
     <div class="row">
         <?php
         foreach ($pesanans as $pesanan) {

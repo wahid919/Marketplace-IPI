@@ -6,6 +6,7 @@ namespace app\controllers\base;
 
 use app\models\Toko;
 use app\models\search\TokoSearch;
+use Yii;
 use yii\web\Controller;
 use yii\web\HttpException;
 use yii\helpers\Url;
@@ -45,10 +46,13 @@ class TokoController extends Controller
 
         Url::remember();
         \Yii::$app->session['__crudReturnUrl'] = null;
-
+        $toko = Toko::findOne(['id_user' => Yii::$app->user->identity->id]);
+        // var_dump($model);
+        // die;
         return $this->render('index', [
             'dataProvider' => $dataProvider,
             'searchModel' => $searchModel,
+            'toko' => $toko
         ]);
     }
 

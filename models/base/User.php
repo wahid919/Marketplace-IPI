@@ -95,7 +95,7 @@ class User extends \yii\db\ActiveRecord
             ['username', 'email'],
             [['nomor_handphone'], 'string', 'max' => 15],
             // [[], 'string', 'max' => 32],
-            [['password', 'photo_url'], 'string', 'max' => 255],
+            [['password', 'photo_url', 'asal_pondok'], 'string', 'max' => 255],
             [['username'], 'unique']
         ];
     }
@@ -115,6 +115,7 @@ class User extends \yii\db\ActiveRecord
             'pin' => 'Pin',
             'secret_token' => 'Secret Token',
             'nomor_handphone' => 'Nomor Handphone',
+            'asal_pondok' => 'Asal Pondok',
             'last_login' => 'Last Login',
             'last_logout' => 'Last Logout',
         ];

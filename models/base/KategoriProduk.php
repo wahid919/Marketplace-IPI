@@ -21,7 +21,18 @@ abstract class KategoriProduk extends \yii\db\ActiveRecord
 {
 
 
+    public function fields()
+    {
+        $parent = parent::fields();
+        if (isset($parent['icon2'])) {
+            unset($parent['icon2']);
+            $parent['icon2'] = function ($model) {
+                return Yii::getAlias("@file/icon2/$model->icon2");
+            };
+        }
 
+        return $parent;
+    }
     /**
      * @inheritdoc
      */
@@ -61,8 +72,4 @@ abstract class KategoriProduk extends \yii\db\ActiveRecord
     {
         return $this->hasMany(\app\models\Produk::className(), ['kategori_produk_id' => 'id']);
     }
-
-
-
-
 }

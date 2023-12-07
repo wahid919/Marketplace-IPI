@@ -130,15 +130,41 @@ use richardfan\widget\JSRegister;
       <div class="col-lg-3 col-md-5">
         <div class="sidebar">
           <div class="blog__sidebar__search">
-            <form action="#">
-              <input type="text" placeholder="Search...">
+            <form action="<?= \Yii::$app->request->baseUrl . "/home/produk" ?>" method="get">
+              <?php
+              if (Yii::$app->request->queryParams) :
+                foreach (Yii::$app->request->queryParams as $key => $item) :
+                  if ($key == "kategori") : ?>
+                    <input type="hidden" name="<?= $key ?>" value="<?= $item ?>">
+              <?php endif;
+                endforeach;
+              endif ?>
+              <input type="text" name="cari" placeholder="Search...">
               <button type="submit"><span class="icon_search"></span></button>
             </form>
           </div>
+          <!-- <div class="col-lg-3 col-md-12 text-left mt-1">
+            <form action="<?= \Yii::$app->request->baseUrl . "/home/produk" ?>" method="get">
+              <div class="input-group mb-4">
+                <?php
+                if (Yii::$app->request->queryParams) :
+                  foreach (Yii::$app->request->queryParams as $key => $item) :
+                    if ($key == "kategori") : ?>
+                      <input type="hidden" name="<?= $key ?>" value="<?= $item ?>">
+                <?php endif;
+                  endforeach;
+                endif ?>
+                <input type="text" name="cari" class="form-control search-input" placeholder="Cari Berita" aria-label="Cari Berita" aria-describedby="button-addon2" value="<?= Yii::$app->request->queryParams['cari'] ?>" style="height: 40px;">
+                <button class="btn btn-search-input" type="submit" id="cari" style="height: 40px;line-height: 38px">
+                  <i class="fa fa-search"></i>
+                </button>
+              </div>
+            </form>
+          </div> -->
           <div class="blog__sidebar__item">
             <h4>Categories</h4>
             <ul>
-              <li><a href="#">All</a></li>
+              <li><a href="<?= \Yii::$app->request->baseUrl . "/home/produk" ?>">All</a></li>
               <?php
               foreach ($kategoris as $kategori) {  ?>
                 <li><a href="<?= \Yii::$app->request->baseUrl . "/home/produk?kategori=" . $kategori->nama ?>"><?= $kategori->nama ?></a></li>
@@ -234,7 +260,7 @@ use richardfan\widget\JSRegister;
                 <div class="latest-product__slider owl-carousel" data-items="3">
                   <?php
                   $counter = 0;
-                  foreach ($produkterbaru as $pro) {
+                  foreach ($produks as $pro) {
                     $minimumprice = ProductDetail::find()->where(['id_product' => $pro->id])->min('harga');
                     $maximumprice = ProductDetail::find()->where(['id_product' => $pro->id])->max('harga');
                     $averageprice = ProductDetail::find()->where(['id_product' => $pro->id])->average('harga');
@@ -288,26 +314,37 @@ use richardfan\widget\JSRegister;
           <div class="section-title product__discount__title">
             <h2>Sale Off</h2>
           </div>
+
           <div class="row">
             <div class="product__discount__slider owl-carousel">
-              <div class="col-lg-4">
-                <div class="product__discount__item">
-                  <div class="product__discount__item__pic set-bg" data-setbg="img/product/discount/pd-2.jpg">
-                    <div class="product__discount__percent">-20%</div>
-                    <ul class="product__item__pic__hover">
-                      <li><a href="#"><i class="fa fa-heart"></i></a></li>
-                      <li><a href="#"><i class="fa fa-retweet"></i></a></li>
-                      <li><a href="#"><i class="fa fa-shopping-cart"></i></a></li>
-                    </ul>
-                  </div>
-                  <div class="product__discount__item__text">
-                    <span>Vegetables</span>
-                    <h5><a href="#">Vegetables’package</a></h5>
-                    <div class="product__item__price">$30.00 <span>$36.00</span></div>
+              <?php foreach ($produkscdiscount as $data) {
+                $minimumprice = ProductDetail::find()->where(['id_product' => $data->id])->min('harga');
+                $maximumprice = ProductDetail::find()->where(['id_product' => $data->id])->max('harga');
+                $averageprice = ProductDetail::find()->where(['id_product' => $data->id])->average('harga');
+                $diskon =  $data->diskon * $averageprice / 100;
+                $hargadiskon = $averageprice - $diskon;
+                // var_dump($hargadiskon);
+                // die;
+              ?>
+                <div class="col-lg-4 col-md-6 col-sm-6">
+                  <div class="product__discount__item">
+                    <div class="product__discount__item__pic program1-wrap" style="background-image: url(<?= \Yii::$app->request->baseUrl . "/uploads/banner_produk/" . $data->foto_banner ?>);    border-radius: 5%;background-position: center;background-repeat: no-repeat;background-size: cover;box-shadow: rgb(204 204 204) 12px 12px 9px;">
+                      <div class="product__discount__percent">-<?= $data->diskon ?>%</div>
+                      <ul class="product__item__pic__hover program__info">
+                        <!-- <li><a href="#"><i class="fa fa-heart"></i></a></li> -->
+                        <li><a href="<?= Url::to(["detail-produk", "id" => $data->id]) ?>"><i class="fa fa-eye"></i></a></li>
+                        <li><a href=""><i class="fa fa-shopping-cart btn-program" id="keranjang"></i></a></li>
+                      </ul>
+                    </div>
+                    <div class="product__discount__item__text">
+                      <h5><a href="#"><?= $data->nama ?></a></h5>
+                      <!-- <h5 class="harga"><?= \app\components\Angka::toReadableHarga($averageprice); ?></h5> -->
+                      <div class="product__item__price"><?= \app\components\Angka::toReadableHarga($hargadiskon); ?><span><?= \app\components\Angka::toReadableHarga($averageprice); ?></span></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="col-lg-4">
+              <?php } ?>
+              <!-- <div class="col-lg-4">
                 <div class="product__discount__item">
                   <div class="product__discount__item__pic set-bg" data-setbg="img/product/discount/pd-3.jpg">
                     <div class="product__discount__percent">-20%</div>
@@ -374,7 +411,7 @@ use richardfan\widget\JSRegister;
                     <div class="product__item__price">$30.00 <span>$36.00</span></div>
                   </div>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>

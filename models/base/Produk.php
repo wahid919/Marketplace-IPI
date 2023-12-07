@@ -8,7 +8,7 @@ use Yii;
 use yii\behaviors\TimestampBehavior;
 
 use yii\db\Expression;
-
+use yii\db\Query;
 
 /**
  * This is the base-model class for table "produk".
@@ -56,6 +56,89 @@ abstract class Produk extends \yii\db\ActiveRecord
                 return $interval;
             };
         }
+
+        if (!isset($parent['avgprice'])) {
+            unset($parent['avgprice']);
+
+            $parent['avgprice'] = function ($model) {
+                $avgprice = ProductDetail::find()->where(['id_product' => $model->id])->average('harga');
+                $avgprice = intval($avgprice);
+                return $avgprice;
+            };
+        }
+        if (!isset($parent['discountprice'])) {
+            unset($parent['discountprice']);
+
+            $parent['discountprice'] = function ($model) {
+                // $discountprice = ProductDetail::find()->where(['id_product' => $model->id])->average('harga');
+                $avgprice = ProductDetail::find()->where(['id_product' => $model->id])->average('harga');
+                $diskon =  $model->diskon * $avgprice / 100;
+                $discountprice = $avgprice - $diskon;
+                $discountprice = intval($discountprice);
+                return $discountprice;
+            };
+        }
+        // $discount = Produk::find()
+        //         ->where(['kategori_produk_id' => $get_id])
+        //         ->andWhere(['!=', 'diskon', 0])
+        //         ->andWhere(['=', 'diskon_status', 1]);
+        //         $diskon =  $data->diskon * $averageprice / 100;
+        //         $hargadiskon = $averageprice - $diskon;
+
+        if (!isset($parent['sumstok'])) {
+            unset($parent['sumstok']);
+
+            $parent['sumstok'] = function ($model) {
+                $sumstok = ProductDetail::find()->where(['id_product' => $model->id])->sum('stok');
+                $sumstok = intval($sumstok);
+                return $sumstok;
+            };
+        }
+
+        if (!isset($parent['percentageSold'])) {
+            unset($parent['percentageSold']);
+
+            $parent['percentageSold'] = function ($model) {
+                // $paidOrders = DetailPesanan::find()->where(['status_id' => 3])->all();
+                $sumstok = ProductDetail::find()->where(['id_product' => $model->id])->sum('stok');
+                $query = (new Query())
+                    ->select('*')
+                    ->from('detail_pesanan dp')
+                    ->join('JOIN', 'keranjang k', 'dp.id = k.id_transaksi')
+                    ->join('JOIN', 'produk p', 'k.produk_id = p.id')
+                    ->where(['k.produk_id' => $model->id])
+                    ->andWhere(['IN', 'dp.status_id', [2, 10, 11]]);
+
+                $paidOrders = $query->count();
+                $queryun = (new Query())
+                    ->select('*')
+                    ->from('detail_pesanan dp')
+                    ->join('JOIN', 'keranjang k', 'dp.id = k.id_transaksi')
+                    ->join('JOIN', 'produk p', 'k.produk_id = p.id')
+                    ->where(['k.produk_id' => $model->id])
+                    ->andWhere(['IN', 'dp.status_id', [3]]);
+
+                $unpaidOrders = $queryun->count();
+                // var_dump($paidOrders);
+                // var_dump($unpaidOrders);
+                // die;
+                $totalSold = 0;
+                // foreach ($paidOrders as $order) {
+                //     $totalSold += count($order->detailPesanan);
+                // }
+
+                $percentageSold = $paidOrders > 0 ? min(($unpaidOrders / $paidOrders) * 100, 100) : 0;
+
+
+                return $percentageSold;
+            };
+        }
+
+        $totalProducts = Produk::find()->count();
+
+
+
+
 
         if (isset($parent['foto_banner'])) {
             unset($parent['foto_banner']);

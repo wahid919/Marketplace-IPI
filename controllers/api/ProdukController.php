@@ -18,8 +18,7 @@ use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use yii\web\Response;
 use app\models\Toko;
-
-
+use yii\db\Query;
 
 class ProdukController extends \yii\rest\ActiveController
 {
@@ -100,6 +99,12 @@ class ProdukController extends \yii\rest\ActiveController
                 $photogaleri = FotoProduk::find()->where(['produk_id' => $id])->all();
                 $avgrating = ReviewProduk::find()->where(['produk_id' => $id])->average('rating');
                 $countreview = ReviewProduk::find()->where(['produk_id' => $id])->count();
+                // $query = (new Query())
+                //     ->select('*')
+                //     ->from('product_detail pd')
+                //     ->join('JOIN', 'product_variant pv', 'pd.id = pv.product_detail_id')
+                //     // ->join('JOIN', 'product_detail pd', 'p.id = pd.id_product')
+                //     ->where(['pd.id' => $modelDetailProduk->id , 'k.id_transaksi' => 0]);
                 // $produk = Produk::find()->where(['id' => $id]);
                 $toko = Toko::find()->where(['id' => $toko_id])->one();
                 $getwarnas = ProductVariant::find()
@@ -116,6 +121,7 @@ class ProdukController extends \yii\rest\ActiveController
                 if ($modelDetailProduk != null) {
                     $result["success"] = true;
                     $result["message"] = "success";
+                    // $result["query"] = $query;
                     $result["averageprice"] = $averageprice;
                     $result["maximumprice"] = $maximumprice;
                     $result["minimumprice"] = $minimumprice;
@@ -124,6 +130,7 @@ class ProdukController extends \yii\rest\ActiveController
                     $result["getwarnas"] = $getwarnas;
                     $result["getsizes"] = $getsizes;
                     $result["avgrating"] = $avgrating;
+                    $result["countreview"] = $countreview;
                     $result["countreview"] = $countreview;
                     $result["toko"] = $toko;
                     $result["data"] = $modelDetailProduk;

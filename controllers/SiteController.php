@@ -12,7 +12,7 @@ use yii\helpers\Url;
 use yii\web\Response;
 use app\models\Action;
 use yii\db\Expression;
-use app\models\Pesanan;
+use app\models\DetailPesanan;
 use app\models\Setting;
 use yii\web\Controller;
 use app\models\LoginForm;
@@ -94,7 +94,7 @@ class SiteController extends Controller
         $operator = User::find()->where(['role_id' => 2])->all();
         $marketing = User::find()->where(['role_id' => 3])->all();
         $user = User::find()->where(['role_id' => 4])->all();
-        $years = Pesanan::find()->select('YEAR(created_at) as year')->distinct()->orderBy('year DESC')->column();
+        $years = DetailPesanan::find()->select('YEAR(created_at) as year')->distinct()->orderBy('year DESC')->column();
 
         $selectedYear = Yii::$app->request->get('year');
 
@@ -102,7 +102,7 @@ class SiteController extends Controller
             $selectedYear = reset($years); // Mengambil tahun terbaru jika tahun tidak dipilih
         }
 
-        $monthlyOrders = Pesanan::find()
+        $monthlyOrders = DetailPesanan::find()
             ->select('MONTH(created_at) as month, COUNT(*) as count')
             ->where(['YEAR(created_at)' => $selectedYear])
             ->groupBy('month')
@@ -124,7 +124,7 @@ class SiteController extends Controller
 
     public function actionGetWeeklyOrders($year, $month)
     {
-        $weeklyOrders = Pesanan::find()
+        $weeklyOrders = DetailPesanan::find()
             ->select('WEEK(created_at) as week, COUNT(*) as count')
             ->where(['YEAR(created_at)' => $year, 'MONTH(created_at)' => $month])
             ->groupBy('week')

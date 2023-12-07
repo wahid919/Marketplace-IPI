@@ -173,6 +173,8 @@ $slides = Slides::find()->where(['status' => 1])->orderBy(new Expression('rand()
         </div>
     </div>
 </div>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.js">
+</script>
 <script>
     $.ajax({
         type: 'post',
@@ -184,6 +186,7 @@ $slides = Slides::find()->where(['status' => 1])->orderBy(new Expression('rand()
     })
     $("#nama_provinsi").on("change", function() {
         var id_provinsi_terpilih = $('option:selected', '#nama_provinsi').attr('id_provinsi');
+        console.log(id_provinsi_terpilih);
         $.ajax({
             type: 'post',
             url: '<?= Yii::$app->request->baseUrl . "/home/ajax-select-city" ?>',

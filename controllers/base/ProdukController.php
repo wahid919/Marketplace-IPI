@@ -5,6 +5,7 @@
 namespace app\controllers\base;
 
 use app\models\Produk;
+use app\models\search\ProdukSayaSearch;
 use app\models\search\ProdukSearch;
 use yii\web\Controller;
 use yii\web\HttpException;
@@ -40,18 +41,34 @@ class ProdukController extends Controller
      */
     public function actionIndex()
     {
-        $searchModel  = new ProdukSearch;
-        $dataProvider = $searchModel->search($_GET);
+        $user = Yii::$app->user->identity;
+        if ($user->role_id == 1) {
+            $searchModel  = new ProdukSearch;
+            $dataProvider = $searchModel->search($_GET);
 
-        Tabs::clearLocalStorage();
+            Tabs::clearLocalStorage();
 
-        Url::remember();
-        \Yii::$app->session['__crudReturnUrl'] = null;
+            Url::remember();
+            \Yii::$app->session['__crudReturnUrl'] = null;
 
-        return $this->render('index', [
-            'dataProvider' => $dataProvider,
-            'searchModel' => $searchModel,
-        ]);
+            return $this->render('index', [
+                'dataProvider' => $dataProvider,
+                'searchModel' => $searchModel,
+            ]);
+        } else {
+            $searchModel  = new ProdukSayaSearch;
+            $dataProvider = $searchModel->search($_GET);
+            $dataProvider->pagination = ['pageSize' => 2];
+            Tabs::clearLocalStorage();
+
+            Url::remember();
+            \Yii::$app->session['__crudReturnUrl'] = null;
+
+            return $this->render('index', [
+                'dataProvider' => $dataProvider,
+                'searchModel' => $searchModel,
+            ]);
+        }
     }
 
     /**

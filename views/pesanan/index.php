@@ -10,7 +10,7 @@ use yii\grid\GridView;
  * @var app\models\search\PesananSearch $searchModel
  */
 
-$this->title = 'Pesanan';
+$this->title = 'DetailPesanan';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -23,10 +23,29 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <div class="box box-info">
     <div class="box-body">
+        <?php
+        $tabs = [
+            'belum-bayar' => 'Belum Bayar',
+            'perlu-dikirim' => 'Perlu Dikirim',
+            'sedang-dikirim' => 'Sedang Dikirim',
+            'selesai' => 'Selesai',
+            'dibatalkan' => 'Dibatalkan',
+        ];
+        $activeTab = Yii::$app->request->get('tab', 'belum-bayar');
+        ?>
+
+        <ul class="nav nav-tabs">
+            <?php foreach ($tabs as $tab => $label) : ?>
+                <li<?= $activeTab === $tab ? ' class="active"' : '' ?>>
+                    <?= Html::a($label, ['pesanan/index', 'tab' => $tab]) ?>
+                    </li>
+                <?php endforeach; ?>
+        </ul>
         <div class="table-responsive">
             <?= GridView::widget([
                 'layout' => '{summary}{pager}{items}{pager}',
-                'dataProvider' => $dataProvider,
+                // 'dataProvider' => $dataProvider,
+                'dataProvider' => $searchModel->searchAdmin(Yii::$app->request->queryParams, $activeTab),
                 'pager'        => [
                     'class'          => yii\widgets\LinkPager::className(),
                     'firstPageLabel' => 'First',

@@ -4,6 +4,7 @@
 
 namespace app\models\base;
 
+use app\models\Produk;
 use Yii;
 
 /**
@@ -22,7 +23,24 @@ abstract class ProductDetail extends \yii\db\ActiveRecord
 {
 
 
+    public function fields()
+    {
+        $parent = parent::fields();
+        if (!isset($parent['discountprice'])) {
+            unset($parent['discountprice']);
 
+            $parent['discountprice'] = function ($model) {
+                // $discountprice = ProductDetail::find()->where(['id_product' => $model->id])->average('harga');
+                $avgprice = $model->harga;
+                $pro = Produk::find()->where(['id' => $model->id_product])->one();
+                $diskon =  $pro->diskon * $avgprice / 100;
+                $discountprice = $avgprice - $diskon;
+                $discountprice = intval($discountprice);
+                return $discountprice;
+            };
+        }
+        return $parent;
+    }
     /**
      * @inheritdoc
      */
