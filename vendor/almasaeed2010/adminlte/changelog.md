@@ -14,7 +14,7 @@
 - Merge branch 'PeterDaveHelloKitchen-image-optimize'
 - Merge PR #1108 to optimize images
 - Fix #1256
-- Fix #126
+- Fix #1269
 - Fix #1276
 - Fix #1296
 - Fix #1300
