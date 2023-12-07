@@ -1,5 +1,6 @@
-﻿# web/uploads/berkas_lampiran
-# web/uploads
-# # web/assets
+﻿web/uploads/berkas_lampiran
+web/uploads
+vendor
+# web/assets
 # config
 # config/db.php
