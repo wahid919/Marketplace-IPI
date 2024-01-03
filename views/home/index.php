@@ -84,33 +84,6 @@ use richardfan\widget\JSRegister;
         color: #1c1c1c;
     }
 </style>
-<?php /*
-<section id="slider3" class="slider slider-3">
-  <div class="carousel owl-carousel carousel-arrows carousel-dots" data-slide="1" data-slide-md="1" data-slide-sm="1" data-autoplay="true" data-nav="true" data-dots="false" data-space="0" data-loop="true" data-speed="3000" data-transition="fade" data-animate-out="fadeOut" data-animate-in="fadeIn">
-    <?php foreach($slider as $slides){ ?>
-<div class="slide-item align-v-h bg-overlay">
-    <!-- <div class="bg-img"><img src="assets/images/sliders/3.jpg" alt="slide img"></div> -->
-    <div class="bg-img"><img src="<?= Yii::$app->request->baseUrl . '/uploads/slides/' . $slides->gambar ?>"
-            alt="background"></div>
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-12 col-md-12 col-lg-8 col-xl-6">
-                <div class="slide__content">
-                    <h2 class="slide__title">Affordable Price, Certified experts &</h2>
-                    <p class="slide__desc">Through integrated supply chain solutions, our drives sustainable competitive
-                        advantages to some of the largest companies allover the world.</p>
-                    <a href="#" class="btn btn__white mr-30">Get Started</a>
-                    <a href="#" class="btn btn__primary btn__hover2">Our Services</a>
-                </div><!-- /.slide-content -->
-            </div><!-- /.col-xl-6 -->
-        </div><!-- /.row -->
-    </div><!-- /.container -->
-</div><!-- /.slide-item -->
-<?php } ?>
-</div><!-- /.carousel -->
-</section><!-- /.slider -->
-*/ ?>
-<!-- Hero Section Begin -->
 <section class="hero">
     <div class="container">
         <div class="row">
@@ -154,10 +127,7 @@ use richardfan\widget\JSRegister;
     border-radius: 20px;    background-repeat: no-repeat;
     background-position: center;">
                     <div class="hero__text">
-                        <!-- <span>FRUIT FRESH</span>
-                        <h2>Vegetable <br />100% Organic</h2>
-                        <p>Free Pickup and Delivery Available</p>
-                        <a href="#" class="primary-btn">About</a> -->
+
                     </div>
                 </div>
             </div>
@@ -436,66 +406,4 @@ use richardfan\widget\JSRegister;
         </div>
     </div>
 </section>
-<!-- Latest Product Section End -->
-
-<!-- Blog Section Begin -->
-<!-- <section class="from-blog spad">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="section-title from-blog__title">
-                    <h2>From The Blog</h2>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="blog__item">
-                    <div class="blog__item__pic">
-                        <img src="img/blog/blog-1.jpg" alt="">
-                    </div>
-                    <div class="blog__item__text">
-                        <ul>
-                            <li><i class="fa fa-calendar-o"></i> May 4,2019</li>
-                            <li><i class="fa fa-comment-o"></i> 5</li>
-                        </ul>
-                        <h5><a href="#">Cooking tips make cooking simple</a></h5>
-                        <p>Sed quia non numquam modi tempora indunt ut labore et dolore magnam aliquam quaerat </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="blog__item">
-                    <div class="blog__item__pic">
-                        <img src="img/blog/blog-2.jpg" alt="">
-                    </div>
-                    <div class="blog__item__text">
-                        <ul>
-                            <li><i class="fa fa-calendar-o"></i> May 4,2019</li>
-                            <li><i class="fa fa-comment-o"></i> 5</li>
-                        </ul>
-                        <h5><a href="#">6 ways to prepare breakfast for 30</a></h5>
-                        <p>Sed quia non numquam modi tempora indunt ut labore et dolore magnam aliquam quaerat </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="blog__item">
-                    <div class="blog__item__pic">
-                        <img src="img/blog/blog-3.jpg" alt="">
-                    </div>
-                    <div class="blog__item__text">
-                        <ul>
-                            <li><i class="fa fa-calendar-o"></i> May 4,2019</li>
-                            <li><i class="fa fa-comment-o"></i> 5</li>
-                        </ul>
-                        <h5><a href="#">Visit the clean farm in the US</a></h5>
-                        <p>Sed quia non numquam modi tempora indunt ut labore et dolore magnam aliquam quaerat </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section> -->
-<!-- Blog Section End -->
 <br>
