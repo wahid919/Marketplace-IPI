@@ -1,13 +1,10 @@
-# Organization Ikatan Pesantren Indonesian Marketplace
+# Marketplace Organisasi Ikatan Pesantren Indonesia
 
-Hackathon Submission - [here](https://devfolio.co/submissions/silver-screen-42c6)
+Hackathon Submission - [here](https://itswahidbar.com/work/projects/ipi)
 
-![Localhost - Generic Laptop - 2021-26-9 at 12 23 48 PM](https://user-images.githubusercontent.com/70439799/134812588-65d7469a-bff2-4a06-9c56-d30c01aa5c74.jpg)
+<!-- ![Localhost - Generic Laptop - 2021-26-9 at 12 23 48 PM](https://user-images.githubusercontent.com/70439799/134812588-65d7469a-bff2-4a06-9c56-d30c01aa5c74.jpg) -->
 
 Live website - [Here](https://IPI.com)
-
-<!-- Backend Repo - [Here](https://github.com/RakeshPotnuru/silverScreen-backend) -->
-<!-- <br> -->
 
 ## Tools used
 
@@ -25,11 +22,15 @@ Live website - [Here](https://IPI.com)
 
 <br>
 
-### 5. MySQL - Database
+### 4. MySQL - Database
 
 <br>
 
-### 6. Heroku, Firebase - Hosting
+### 5. Midtrans - Payment Gateway
+
+<br>
+
+<!-- ### 6. Firebase - Hosting -->
 
 <br>
 
